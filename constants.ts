@@ -1,5 +1,4 @@
-
-import { Sponsorship, ShopItem, LocalizedString } from './types';
+import { Sponsorship, ShopItem, LocalizedString, ElonItem, BillItem } from './types';
 
 export const TRANSLATIONS = {
   en: {
@@ -10,16 +9,19 @@ export const TRANSLATIONS = {
     day: "Day",
     uploadVideo: "Upload Video",
     uploadCheat: "Upload Cheat",
+    uploadCooking: "Upload Cooking Video",
     brandPromo: "Brand Promotion",
     newProject: "Big Software Project",
     shop: "Shop",
     main: "Home",
     inventory: "Inventory",
+    restaurant: "Restaurant",
     settings: "Settings",
     redeem: "Redeem",
     enterCode: "Enter code...",
     owned: "OWNED",
     buy: "BUY",
+    sell: "SELL",
     boost: "BOOST",
     strategy: "Strategy Guide",
     strategyDesc: "Sponsorship offers only come when you upload normal videos. Cheat videos provide quick resources! Be careful with suspicious URLs in sponsorships.",
@@ -51,13 +53,22 @@ export const TRANSLATIONS = {
     deleteSave: "Delete Local Save",
     confirmWipe: "Wipe save data? All progress will be lost.",
     langHeader: "Language",
+    visit: "Eat",
+    active: "Eaten",
     // Action Descriptions
     videoBtnDesc: "Coding tutorial. (Reward: ~50 Sub, ~100₺, +2 Rep)",
     promoBtnDesc: "Brand showcase. (Reward: 100 Sub, 10,000₺, +10 Rep)",
     projectBtnDesc: "Massive SAAS. (Reward: 5,000 Sub, 25,000₺, +100 Rep | Cost: 10,000₺)",
     cheatBtnDesc: "Quick growth. (Reward: ~3k Sub, ~10k₺)",
+    cookingBtnDesc: "Kitchen VLOG. (Reward: 5,000 Sub, 10,000₺, +50 Rep)",
     uploadedMsg: "uploaded successfully!",
-    gained: "Gained"
+    gained: "Gained",
+    elonTitle: "Spend Elon's Money",
+    billTitle: "Spend Bill Gates' Money",
+    remaining: "Remaining",
+    spent: "Spent",
+    elonDesc: "Elon just handed you his credit card. Don't worry, it's unlimited (mostly).",
+    billDesc: "Bill Gates left his wallet here. Let's see how much good we can do (or buy)."
   },
   tr: {
     money: "Para",
@@ -67,16 +78,19 @@ export const TRANSLATIONS = {
     day: "Gün",
     uploadVideo: "Video Yükle",
     uploadCheat: "Hileli İçerik",
+    uploadCooking: "Yemek Videosu Yükle",
     brandPromo: "Marka Ürün Tanıtımı",
     newProject: "Büyük Yazılım Projesi",
     shop: "Mağaza",
     main: "Ana Sayfa",
     inventory: "Envanter",
+    restaurant: "Restoran",
     settings: "Ayarlar",
     redeem: "Kullan",
     enterCode: "Kodu buraya yaz...",
     owned: "ALINDI",
     buy: "SATIN AL",
+    sell: "SAT",
     boost: "ÇARPAN",
     strategy: "Strateji Rehberi",
     strategyDesc: "Sponsorluk teklifleri sadece normal videolar attığında gelir. Hileli içerik hızlı kaynak sağlar! Şüpheli URL'lere dikkat et.",
@@ -90,7 +104,7 @@ export const TRANSLATIONS = {
     accept: "Kabul Et",
     reject: "Reddet",
     sponsorshipTitle: "Yeni Teklif!",
-    brand: "Marka",
+    brand: "Brand",
     offerPrice: "Teklif",
     details: "Detaylar",
     website: "Web Sitesi",
@@ -108,13 +122,22 @@ export const TRANSLATIONS = {
     deleteSave: "Kaydı Sil",
     confirmWipe: "Kaydı silmek istediğine emin misin? Tüm ilerleme kaybolacak.",
     langHeader: "Dil",
+    visit: "Yemek Ye",
+    active: "Yenildi",
     // Action Descriptions
     videoBtnDesc: "Kodlama dersi. (Ödül: ~50 Abone, ~100₺, +2 İtibar)",
     promoBtnDesc: "Ürün tanıtımı. (Ödül: 100 Abone, 10.000₺, +10 İtibar)",
     projectBtnDesc: "Büyük proje. (Ödül: 5.000 Abone, 25.000₺, +100 İtibar | Maliyet: 10.000₺)",
     cheatBtnDesc: "Hızlı büyüme. (Ödül: ~3k Abone, ~10k₺)",
+    cookingBtnDesc: "Mutfak VLOG'u. (Ödül: 5.000 Abone, 10.000₺, +50 İtibar)",
     uploadedMsg: "başarıyla yüklendi!",
-    gained: "Kazanç"
+    gained: "Kazanç",
+    elonTitle: "Elon'un Parasını Ez",
+    billTitle: "Bill Gates'in Parasını Ez",
+    remaining: "Kalan",
+    spent: "Harcanan",
+    elonDesc: "Elon kredi kartını sana verdi. Merak etme, (neredeyse) sınırsız.",
+    billDesc: "Bill Gates cüzdanını burada unutmuş. Ne kadar harcayabiliriz bakalım."
   }
 };
 
@@ -144,6 +167,14 @@ export const VIDEO_TITLES: LocalizedString[] = [
     { en: "Salary Reveal!", tr: "Maaşımı Açıklıyorum!" }
 ];
 
+export const COOKING_VIDEO_TITLES: LocalizedString[] = [
+  { en: "Chef Developer: Spicy Pasta", tr: "Yazılımcı Şef: Acılı Makarna" },
+  { en: "Late Night Coding Ramen", tr: "Gece Yarısı Kodlama Rameni" },
+  { en: "The Ultimate Pancake Recipe", tr: "En İyi Pankek Tarifi" },
+  { en: "How to Cook While Coding?", tr: "Kod Yazarken Nasıl Yemek Yapılır?" },
+  { en: "Testing 5-Minute Recipes", tr: "5 Dakikalık Tarifleri Deniyoruz" }
+];
+
 export const SHOP_ITEMS: ShopItem[] = [
   {
     id: "rtx5090",
@@ -154,6 +185,14 @@ export const SHOP_ITEMS: ShopItem[] = [
     description: { en: "World's most powerful GPU. 2x multiplier!", tr: "Dünyanın en güçlü ekran kartı. 2x Kazanç Çarpanı!" }
   },
   {
+    id: "shure_sm7b",
+    name: { en: "Shure SM7B Mic", tr: "Shure SM7B Mikrofon" },
+    price: 12000,
+    multiplier: 1.7,
+    image: "https://images.unsplash.com/photo-1590602847861-f357a9332bbc?auto=format&fit=crop&q=80&w=600",
+    description: { en: "Professional studio sound. 1.7x multiplier!", tr: "Profesyonel stüdyo sesi. 1.7x Çarpan!" }
+  },
+  {
     id: "razer_monitor",
     name: { en: "Razer Monitor", tr: "Razer Monitör" },
     price: 15000,
@@ -162,22 +201,152 @@ export const SHOP_ITEMS: ShopItem[] = [
     description: { en: "High refresh rate. 1.2x multiplier!", tr: "Yüksek yenileme hızı. 1.2x Kazanç Çarpanı!" }
   },
   {
+    id: "ps5",
+    name: { en: "PlayStation 5", tr: "PlayStation 5" },
+    price: 25000,
+    multiplier: 1.3,
+    image: "https://m.media-amazon.com/images/I/619BkvKW35L._SL1500_.jpg",
+    description: { en: "The next generation of console gaming. 1.3x multiplier!", tr: "Yeni nesil konsol oyunculuğu. 1.3x Kazanç Çarpanı!" }
+  },
+  {
+    id: "steam_deck",
+    name: { en: "Steam Deck", tr: "Steam Deck" },
+    price: 28000,
+    multiplier: 1.4,
+    image: "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTdCmrrhVnj2o3om_G4Rv8A3E2XWwCaWBipXQ&s",
+    description: { en: "The ultimate portable PC gaming machine. 1.4x multiplier!", tr: "Mükemmel taşınabilir PC oyun makinesi. 1.4x Kazanç Çarpanı!" }
+  },
+  {
     id: "macbook_pro",
     name: { en: "MacBook Pro M4 Max", tr: "MacBook Pro M4 Max" },
     price: 120000,
     multiplier: 3.5,
     image: "https://images.unsplash.com/photo-1517336714731-489689fd1ca8?auto=format&fit=crop&q=80&w=600",
     description: { en: "The dream machine for devs. 3.5x multiplier!", tr: "Yazılımcının rüyası. 3.5x Kazanç Çarpanı!" }
-  },
-  {
-    id: "sony_a7siii",
-    name: { en: "Sony A7S III", tr: "Sony A7S III" },
-    price: 85000,
-    multiplier: 2.5,
-    image: "https://images.unsplash.com/photo-1516035069371-29a1b244cc32?auto=format&fit=crop&q=80&w=600",
-    description: { en: "4K 120 FPS quality. 2.5x multiplier!", tr: "4K 120 FPS ile sinematik kalite. 2.5x Kazanç Çarpanı!" }
   }
 ];
+
+export const ELON_ITEMS: ElonItem[] = [
+  { id: 'mac', name: { en: 'Big Mac', tr: 'Big Mac' }, price: 2, image: 'https://images.unsplash.com/photo-1568901346375-23c9450c58cd?w=400' },
+  { id: 'shoes', name: { en: 'Flip Flops', tr: 'Parmak Arası Terlik' }, price: 3, image: 'https://images.unsplash.com/photo-1603487742131-4160ec999306?w=400' },
+  { id: 'ps5', name: { en: 'PlayStation 5', tr: 'PlayStation 5' }, price: 499, image: 'https://m.media-amazon.com/images/I/619BkvKW35L._SL1500_.jpg' },
+  { id: 'pc', name: { en: 'Gaming PC', tr: 'Gaming PC' }, price: 2500, image: 'https://images.unsplash.com/photo-1587202372775-e229f172b9d7?w=400' },
+  { id: 'watch', name: { en: 'Rolex', tr: 'Rolex' }, price: 15000, image: 'https://images.unsplash.com/photo-1523170335258-f5ed11844a49?w=400' },
+  { id: 'tesla', name: { en: 'Tesla Model S', tr: 'Tesla Model S' }, price: 75000, image: 'https://images.unsplash.com/photo-1560958089-b8a1929cea89?w=400' },
+  { id: 'ferrari', name: { en: 'Ferrari F8', tr: 'Ferrari F8' }, price: 250000, image: 'https://images.unsplash.com/photo-1592198084033-aade902d1aae?w=400' },
+  { id: 'home', name: { en: 'Luxury Home', tr: 'Lüks Ev' }, price: 300000, image: 'https://images.unsplash.com/photo-1512917774080-9991f1c4c750?w=400' },
+  { id: 'yacht', name: { en: 'Super Yacht', tr: 'Süper Yat' }, price: 7500000, image: 'https://images.unsplash.com/photo-1567899378494-47b22a2ae96a?w=400' },
+  { id: 'm1', name: { en: 'M1 Abrams', tr: 'M1 Abrams Tank' }, price: 8000000, image: 'https://images.unsplash.com/photo-1593079831268-3381b0db4a77?w=400' },
+  { id: 'jet', name: { en: 'Private Jet', tr: 'Özel Jet' }, price: 148000000, image: 'https://images.unsplash.com/photo-1540962351504-03099e0a754b?w=400' },
+  { id: 'mona', name: { en: 'Mona Lisa', tr: 'Mona Lisa' }, price: 860000000, image: 'https://images.unsplash.com/photo-1580136608260-4eb11f49a24e?w=400' },
+  { id: 'sky', name: { en: 'Skyscraper', tr: 'Gökdelen' }, price: 1200000000, image: 'https://images.unsplash.com/photo-1477959858617-67f85cf4f1df?w=400' },
+  { id: 'nba', name: { en: 'NBA Team', tr: 'NBA Takımı' }, price: 2500000000, image: 'https://images.unsplash.com/photo-1504450758481-7338eba7524a?w=400' },
+  { id: 'rocket', name: { en: 'SpaceX Rocket', tr: 'SpaceX Roketi' }, price: 5000000000, image: 'https://images.unsplash.com/photo-1517976487492-5750f3195933?w=400' }
+];
+
+export const BILL_ITEMS: BillItem[] = [
+  { id: 'book', name: { en: 'Book', tr: 'Kitap' }, price: 15, image: 'https://images.unsplash.com/photo-1495446815901-a7297e633e8d?w=400' },
+  { id: 'xbox', name: { en: 'Xbox Series X', tr: 'Xbox Series X' }, price: 499, image: 'https://images.unsplash.com/photo-1621259182978-f09e5e2ca09a?w=400' },
+  { id: 'pc_bill', name: { en: 'Surface Studio', tr: 'Surface Studio' }, price: 3500, image: 'https://images.unsplash.com/photo-1522202176988-66273c2fd55f?w=400' },
+  { id: 'don_bill', name: { en: 'Charity Donation', tr: 'Bağış' }, price: 1000000, image: 'https://images.unsplash.com/photo-1488521787991-ed7bbaae773c?w=400' },
+  { id: 'museum', name: { en: 'Museum', tr: 'Müze' }, price: 50000000, image: 'https://images.unsplash.com/photo-1518998053574-53f1f61f9b86?w=400' },
+  { id: 'island', name: { en: 'Private Island', tr: 'Özel Ada' }, price: 150000000, image: 'https://images.unsplash.com/photo-1559128010-7c1ad6e1b6a5?w=400' },
+  { id: 'nfl', name: { en: 'NFL Team', tr: 'NFL Takımı' }, price: 4000000000, image: 'https://images.unsplash.com/photo-1566577739112-5180d4bf9390?w=400' },
+  { id: 'win_bill', name: { en: 'Microsoft Stake', tr: 'Microsoft Hissesi' }, price: 15000000000, image: 'https://images.unsplash.com/photo-1519389950473-47ba0277781c?w=400' }
+];
+
+export const getKFC_Sponsorship = (): Sponsorship => ({
+  id: 'kfc-' + Math.random().toString(36).substr(2, 5),
+  brand: "KFC",
+  offer: 8000,
+  repImpact: 15,
+  isScam: false,
+  description: { en: "Finger lickin' good deal! Promote our new spicy bucket.", tr: "Parmak ısırtan teklif! Yeni acılı kovamızı tanıt." }
+});
+
+export const getPopeyes_Sponsorship = (): Sponsorship => ({
+  id: 'popeyes-' + Math.random().toString(36).substr(2, 5),
+  brand: "Popeyes",
+  offer: 8500,
+  repImpact: 12,
+  isScam: false,
+  description: { en: "Louisiana style chicken! Show off our crunchy tenders.", tr: "Louisiana usulü tavuk! Çıtır tavuklarımızı göster." }
+});
+
+export const getBK_Sponsorship = (): Sponsorship => ({
+  id: 'bk-' + Math.random().toString(36).substr(2, 5),
+  brand: "Burger King",
+  offer: 7500,
+  repImpact: 10,
+  isScam: false,
+  description: { en: "The King of Burgers! Promote the Whopper in your video.", tr: "Burgerlerin Kralı! Videonda Whopper tanıtımı yap." }
+});
+
+export const getWendys_Sponsorship = (): Sponsorship => ({
+  id: 'wendys-' + Math.random().toString(36).substr(2, 5),
+  brand: "Wendy's",
+  offer: 9000,
+  repImpact: 14,
+  isScam: false,
+  description: { en: "Always fresh, never frozen! Promote our signature square burgers.", tr: "Daima taze, asla dondurulmamış! Kare burgerlerimizi tanıt." }
+});
+
+export const getHDIskender_Sponsorship = (): Sponsorship => ({
+  id: 'hd-iskender-' + Math.random().toString(36).substr(2, 5),
+  brand: "HD İskender",
+  offer: 12000,
+  repImpact: 20,
+  isScam: false,
+  description: { en: "Premium traditional taste! Show our masterfully prepared İskender.", tr: "Geleneksel lezzet! Ustalıkla hazırlanan İskender'imizi tanıt." }
+});
+
+export const getKudoKudo_Sponsorship = (): Sponsorship => ({
+  id: 'kudo-kudo-' + Math.random().toString(36).substr(2, 5),
+  brand: "Kudo Kudo",
+  offer: 11000,
+  repImpact: 18,
+  isScam: false,
+  description: { en: "Delicious wings and buckets! Share the Kudo Kudo joy with your viewers.", tr: "Lezzetli kanatlar ve kovalar! Kudo Kudo neşesini izleyicilerinle paylaş." }
+});
+
+export const getDominos_Sponsorship = (): Sponsorship => ({
+  id: 'dominos-' + Math.random().toString(36).substr(2, 5),
+  brand: "Domino's",
+  offer: 13000,
+  repImpact: 22,
+  isScam: false,
+  description: { en: "Pizza party! Promote our 30-minute delivery guarantee.", tr: "Pizza partisi! 30 dakikada kapında garantimizi tanıt." }
+});
+
+export const getStarbucks_Sponsorship = (): Sponsorship => ({
+  id: 'starbucks-' + Math.random().toString(36).substr(2, 5),
+  brand: "Starbucks",
+  offer: 15000,
+  repImpact: 30,
+  isScam: false,
+  description: { en: "Fuel for developers! Show your favorite Starbucks coffee.", tr: "Yazılımcıların yakıtı! En sevdiğin Starbucks kahveni göster." }
+});
+
+export const getSubway_Sponsorship = (): Sponsorship => ({
+  id: 'subway-' + Math.random().toString(36).substr(2, 5),
+  brand: "Subway",
+  offer: 10500,
+  repImpact: 15,
+  isScam: false,
+  description: { en: "Eat fresh! Showcase our healthy sub options.", tr: "Taze ye! Sağlıklı sandviç seçeneklerimizi tanıt." }
+});
+
+export const getYouTubePremium_Sponsorship = (): Sponsorship => ({
+  id: 'yt-premium-' + Math.random().toString(36).substr(2, 5),
+  brand: "YouTube Premium",
+  offer: 100000,
+  repImpact: 150,
+  isScam: false,
+  description: { 
+    en: "Exclusive partnership with YouTube! Showcase the benefits of Premium to your community with high rewards.", 
+    tr: "YouTube ile özel iş birliği! Premium avantajlarını topluluğuna tanıt, yüksek ödül kazan." 
+  }
+});
 
 export const getRandomSponsorship = (isScam: boolean): Sponsorship => {
   const id = Math.random().toString(36).substr(2, 9);
@@ -203,3 +372,69 @@ export const getRandomSponsorship = (isScam: boolean): Sponsorship => {
     };
   }
 };
+
+export const RESTAURANTS = [
+  {
+    id: 'kfc',
+    name: 'KFC',
+    logo: 'https://upload.wikimedia.org/wikipedia/tr/thumb/a/a5/Kentucky_Fried_Chicken_logo.svg/1280px-Kentucky_Fried_Chicken_logo.svg.png',
+    price: 1000,
+    desc: { en: 'Eating here increases KFC sponsorship probability.', tr: 'Burada yemek yemek KFC sponsorluk ihtimalini arttırır.' }
+  },
+  {
+    id: 'dominos',
+    name: "Domino's",
+    logo: 'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTNovqh1yOCTHErr7yiL8SrAOLQtwqJEmTAjw&s',
+    price: 1400,
+    desc: { en: "Pizza time! Increases Domino's sponsorship probability.", tr: "Pizza zamanı! Domino's sponsorluk ihtimalini arttırır." }
+  },
+  {
+    id: 'starbucks',
+    name: "Starbucks",
+    logo: 'https://upload.wikimedia.org/wikipedia/en/thumb/d/d3/Starbucks_Corporation_Logo_2011.svg/1200px-Starbucks_Corporation_Logo_2011.svg.png',
+    price: 900,
+    desc: { en: "Caffeine boost! Increases Starbucks sponsorship probability.", tr: "Kafein deposu! Starbucks sponsorluk ihtimalini arttırır." }
+  },
+  {
+    id: 'subway',
+    name: "Subway",
+    logo: 'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQ0Wdjnyoayitz6UbXytlAa-LITVuOXsfg-Ug&s',
+    price: 1100,
+    desc: { en: "Eat fresh! Increases Subway sponsorship probability.", tr: "Taze ye! Subway sponsorluk ihtimalini arttırır." }
+  },
+  {
+    id: 'popeyes',
+    name: 'Popeyes',
+    logo: 'https://istanbulcevahir.com/wp-content/uploads/2023/02/popeyes-logo.png',
+    price: 1200,
+    desc: { en: 'Eating here increases Popeyes sponsorship probability.', tr: 'Burada yemek yemek Popeyes sponsorluk ihtimalini arttırır.' }
+  },
+  {
+    id: 'bk',
+    name: 'Burger King',
+    logo: 'https://upload.wikimedia.org/wikipedia/commons/thumb/c/cc/Burger_King_2020.svg/2048px-Burger_King_2020.svg.png',
+    price: 800,
+    desc: { en: 'Eating here increases general brand interest and chance for BK deals.', tr: 'Burada yemek yemek genel marka ilgisini ve BK teklifi şansını arttırır.' }
+  },
+  {
+    id: 'wendys',
+    name: "Wendy's",
+    logo: 'https://upload.wikimedia.org/wikipedia/en/thumb/3/32/Wendy%27s_full_logo_2012.svg/1280px-Wendy%27s_full_logo_2012.svg.png',
+    price: 1100,
+    desc: { en: "Eating here increases Wendy's sponsorship probability.", tr: "Burada yemek yemek Wendy's sponsorluk ihtimalini arttırır." }
+  },
+  {
+    id: 'hd-iskender',
+    name: "HD İskender",
+    logo: 'https://www.forumkayseri.com/media/image/YS4XOVQXLQQMID.jpg',
+    price: 1500,
+    desc: { en: "Traditional taste! Eating here increases HD İskender sponsorship probability.", tr: "Geleneksel lezzet! Burada yemek yemek HD İskender sponsorluk ihtimalini arttırır." }
+  },
+  {
+    id: 'kudo-kudo',
+    name: "Kudo Kudo",
+    logo: 'https://odoocdn.com/web/image/res.partner/17027629/avatar_1920/Kudo%20Kudo%20Türkiye?unique=12111c8',
+    price: 1300,
+    desc: { en: "Amazing flavors! Eating here increases Kudo Kudo sponsorship probability.", tr: "Harika lezzetler! Burada yemek yemek Kudo Kudo sponsorluk ihtimalini arttırır." }
+  }
+];

@@ -1,13 +1,32 @@
-
 import React, { useState, useCallback, useMemo, useEffect } from 'react';
-import { GameState, Sponsorship, Notification, ShopItem, Language } from './types';
-import { VIDEO_TITLES, getRandomSponsorship, SHOP_ITEMS, REAL_BRANDS, TRANSLATIONS } from './constants';
+import { GoogleGenAI, Type } from "@google/genai";
+import { GameState, Sponsorship, Notification, ShopItem, Language, ElonItem, BillItem } from './types';
+import { 
+  VIDEO_TITLES, 
+  COOKING_VIDEO_TITLES, 
+  getRandomSponsorship, 
+  getKFC_Sponsorship, 
+  getPopeyes_Sponsorship, 
+  getBK_Sponsorship, 
+  getWendys_Sponsorship, 
+  getHDIskender_Sponsorship, 
+  getKudoKudo_Sponsorship,
+  getDominos_Sponsorship,
+  getStarbucks_Sponsorship,
+  getSubway_Sponsorship,
+  getYouTubePremium_Sponsorship,
+  SHOP_ITEMS, 
+  TRANSLATIONS, 
+  RESTAURANTS,
+  ELON_ITEMS,
+  BILL_ITEMS 
+} from './constants';
 import StatsBar from './components/StatsBar';
 import NotificationSystem from './components/NotificationSystem';
 import SponsorshipDialog from './components/SponsorshipDialog';
 
 const INITIAL_STATE: GameState = {
-  money: 5000, 
+  money: 10000, 
   reputation: 50,
   subscribers: 0,
   videoCount: 0,
@@ -16,13 +35,21 @@ const INITIAL_STATE: GameState = {
   gameOverReason: '',
   inventory: [],
   usedCodes: [],
-  language: 'en'
+  language: 'en',
+  guaranteedSponsor: false,
+  activeRestaurant: null,
+  isElonModeUnlocked: false,
+  elonPurchases: {},
+  isBillModeUnlocked: false,
+  billPurchases: {}
 };
 
-const SAVE_KEY = "devtube_tycoon_bin_v1";
-const XOR_KEY = 0xAA; // Secret key for binary obfuscation
+const ELON_BUDGET = 9999999999999999999999999999999999999999999;
+const BILL_BUDGET = 9999999999999999999999999999999999999999999;
 
-// Secure Save/Load Functions
+const SAVE_KEY = "devtube_tycoon_bin_v1";
+const XOR_KEY = 0xAA;
+
 const encryptSave = (data: GameState): string => {
   const json = JSON.stringify(data);
   const encoder = new TextEncoder();
@@ -61,8 +88,12 @@ const App: React.FC = () => {
   const [state, setState] = useState<GameState>(INITIAL_STATE);
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [activeSponsor, setActiveSponsor] = useState<Sponsorship | null>(null);
-  const [currentTab, setCurrentTab] = useState<'main' | 'shop' | 'inventory' | 'settings'>('main');
+  const [currentTab, setCurrentTab] = useState<'main' | 'gemini' | 'elon' | 'bill' | 'shop' | 'inventory' | 'restaurant' | 'settings'>('main');
   const [promoCode, setPromoCode] = useState('');
+  
+  // Gemini State
+  const [aiPrompt, setAiPrompt] = useState('');
+  const [isAiLoading, setIsAiLoading] = useState(false);
 
   const t = TRANSLATIONS[state.language];
 
@@ -80,6 +111,24 @@ const App: React.FC = () => {
   const currentMilestone = useMemo(() => {
     return MILESTONES.find(m => m > state.subscribers) || 999999999;
   }, [state.subscribers]);
+
+  const elonStats = useMemo(() => {
+    let spent = 0;
+    Object.entries(state.elonPurchases || {}).forEach(([id, qty]) => {
+      const item = ELON_ITEMS.find(i => i.id === id);
+      if (item) spent += item.price * (qty as number);
+    });
+    return { spent, remaining: ELON_BUDGET - spent };
+  }, [state.elonPurchases]);
+
+  const billStats = useMemo(() => {
+    let spent = 0;
+    Object.entries(state.billPurchases || {}).forEach(([id, qty]) => {
+      const item = BILL_ITEMS.find(i => i.id === id);
+      if (item) spent += item.price * (qty as number);
+    });
+    return { spent, remaining: BILL_BUDGET - spent };
+  }, [state.billPurchases]);
 
   const addNotification = useCallback((message: string, type: Notification['type'] = 'info') => {
     const id = Math.random().toString(36).substr(2, 9);
@@ -106,38 +155,158 @@ const App: React.FC = () => {
     }
   }, [state]);
 
-  const handleAction = (type: 'video' | 'cheat' | 'promo' | 'project') => {
+  const handleGeminiLab = async () => {
+    if (!aiPrompt.trim() || isAiLoading) return;
+    setIsAiLoading(true);
+
+    const hasSecretCode = aiPrompt.toLowerCase().includes('justbekirai2014');
+
+    try {
+      const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+      const response = await ai.models.generateContent({
+        model: "gemini-3-flash-preview",
+        contents: `I want to add this to my DevTube Tycoon game: "${aiPrompt}"`,
+        config: {
+          systemInstruction: `You are the Game Master for "DevTube Tycoon". 
+          The user wants to "add" a feature or change something. 
+          Respond in ${state.language === 'tr' ? 'Turkish' : 'English'}.
+          
+          RULES:
+          1. DO NOT give resources (money, subscribers, reputation) by default.
+          2. DO NOT upload videos or increment video counts by default.
+          3. Only describe the new "feature" added to the game session context.
+          
+          EXCEPTION:
+          If the prompt contains the secret code "justbekirai2014", you are allowed to give ANY amount of resources, money, or reputation, and you CAN upload videos.
+          
+          Always return JSON with:
+          - message: A funny context-aware message describing the feature added.
+          - subs: subscribers to add (0 if no secret code).
+          - money: money to add (0 if no secret code).
+          - rep: reputation change (0 if no secret code).
+          - specialFeatureDesc: a short description of the simulated feature.`,
+          responseMimeType: "application/json",
+          responseSchema: {
+            type: Type.OBJECT,
+            properties: {
+              message: { type: Type.STRING },
+              subs: { type: Type.NUMBER },
+              money: { type: Type.NUMBER },
+              rep: { type: Type.NUMBER },
+              specialFeatureDesc: { type: Type.STRING }
+            },
+            required: ["message", "subs", "money", "rep", "specialFeatureDesc"]
+          }
+        }
+      });
+
+      const data = JSON.parse(response.text || '{}');
+      
+      const finalSubs = hasSecretCode ? (data.subs || 0) : 0;
+      const finalMoney = hasSecretCode ? (data.money || 0) : 0;
+      const finalRep = hasSecretCode ? (data.rep || 0) : 0;
+
+      setState(prev => ({
+        ...prev,
+        subscribers: prev.subscribers + finalSubs,
+        money: prev.money + finalMoney,
+        reputation: prev.reputation + finalRep,
+        videoCount: hasSecretCode && (data.subs > 0 || data.money > 0) ? prev.videoCount + 1 : prev.videoCount
+      }));
+
+      addNotification(`${data.message}`, 'success');
+      if (data.specialFeatureDesc) {
+        addNotification(`Feature Added: ${data.specialFeatureDesc}`, 'info');
+      }
+      setAiPrompt('');
+    } catch (error) {
+      console.error(error);
+      addNotification("AI Connection error!", "error");
+    } finally {
+      setIsAiLoading(false);
+    }
+  };
+
+  const handleAction = (type: 'video' | 'cheat' | 'promo' | 'project' | 'cooking') => {
     if (state.isGameOver) return;
 
     let subGain = 0;
     let moneyGain = 0;
     let repGain = 0;
-    let cost = 0;
-    let msg = "";
-    const titles = VIDEO_TITLES;
-    const title = titles[Math.floor(Math.random() * titles.length)][state.language];
+    let cost = 0;    let msg = "";
 
     switch (type) {
-      case 'video':
+      case 'video': {
+        const title = VIDEO_TITLES[Math.floor(Math.random() * VIDEO_TITLES.length)][state.language];
         subGain = (Math.floor(Math.random() * 50) + 20) * multipliers.subMult;
         moneyGain = (Math.floor(Math.random() * 100) + 50) * multipliers.moneyMult;
         repGain = 2;
         msg = `"${title}" ${t.uploadedMsg}`;
-        if (Math.random() < 0.35) {
-          setTimeout(() => setActiveSponsor(getRandomSponsorship(Math.random() < 0.2)), 800);
+        if (state.guaranteedSponsor || Math.random() < 0.35) {
+          const isScam = Math.random() < 0.2;
+          const isRare = Math.random() < 0.05;
+          setTimeout(() => {
+            if (isRare && !isScam) {
+              setActiveSponsor(getYouTubePremium_Sponsorship());
+            } else {
+              setActiveSponsor(getRandomSponsorship(isScam));
+            }
+          }, 800);
         }
         break;
+      }
+      case 'cooking': {
+        const title = COOKING_VIDEO_TITLES[Math.floor(Math.random() * COOKING_VIDEO_TITLES.length)][state.language];
+        subGain = 5000 * multipliers.subMult;
+        moneyGain = 10000 * multipliers.moneyMult;
+        repGain = 50;
+        msg = `"${title}" ${t.uploadedMsg}`;
+        
+        let foodSponsorChance = state.activeRestaurant ? 0.6 : 0.3;
+        if (state.guaranteedSponsor) foodSponsorChance = 1.0;
+
+        if (Math.random() < foodSponsorChance) {
+          setTimeout(() => {
+            if (Math.random() < 0.03) {
+              setActiveSponsor(getYouTubePremium_Sponsorship());
+              return;
+            }
+
+            if (state.activeRestaurant === 'kfc') setActiveSponsor(getKFC_Sponsorship());
+            else if (state.activeRestaurant === 'popeyes') setActiveSponsor(getPopeyes_Sponsorship());
+            else if (state.activeRestaurant === 'bk') setActiveSponsor(getBK_Sponsorship());
+            else if (state.activeRestaurant === 'wendys') setActiveSponsor(getWendys_Sponsorship());
+            else if (state.activeRestaurant === 'hd-iskender') setActiveSponsor(getHDIskender_Sponsorship());
+            else if (state.activeRestaurant === 'kudo-kudo') setActiveSponsor(getKudoKudo_Sponsorship());
+            else if (state.activeRestaurant === 'dominos') setActiveSponsor(getDominos_Sponsorship());
+            else if (state.activeRestaurant === 'starbucks') setActiveSponsor(getStarbucks_Sponsorship());
+            else if (state.activeRestaurant === 'subway') setActiveSponsor(getSubway_Sponsorship());
+            else {
+              const roll = Math.random();
+              if (roll < 0.1) setActiveSponsor(getKFC_Sponsorship());
+              else if (roll < 0.2) setActiveSponsor(getPopeyes_Sponsorship());
+              else if (roll < 0.3) setActiveSponsor(getBK_Sponsorship());
+              else if (roll < 0.4) setActiveSponsor(getWendys_Sponsorship());
+              else if (roll < 0.5) setActiveSponsor(getHDIskender_Sponsorship());
+              else if (roll < 0.6) setActiveSponsor(getKudoKudo_Sponsorship());
+              else if (roll < 0.7) setActiveSponsor(getDominos_Sponsorship());
+              else if (roll < 0.8) setActiveSponsor(getStarbucks_Sponsorship());
+              else setActiveSponsor(getSubway_Sponsorship());
+            }
+          }, 800);
+        }
+        break;
+      }
       case 'cheat':
         subGain = (Math.floor(Math.random() * 5000) + 1000) * multipliers.subMult;
         moneyGain = (Math.floor(Math.random() * 15000) + 5000) * multipliers.moneyMult;
-        repGain = 0; // Removed reputation loss
+        repGain = 0; 
         msg = `${t.uploadCheat}!`;
+        if (state.guaranteedSponsor) {
+           setTimeout(() => setActiveSponsor(getRandomSponsorship(Math.random() < 0.1)), 800);
+        }
         break;
       case 'promo':
-        if (state.reputation < 100) {
-          addNotification(state.language === 'tr' ? "100 İtibar Lazım!" : "Need 100 Reputation!", "error");
-          return;
-        }
         subGain = 100 * multipliers.subMult;
         moneyGain = 10000 * multipliers.moneyMult;
         repGain = 10;
@@ -195,6 +364,21 @@ const App: React.FC = () => {
     } else if (code === 'elonmusknet') {
       update = { money: state.money + 1000000000 };
       success = true;
+    } else if (code === 'billgatesnet') {
+      update = { money: state.money + 500000000 };
+      success = true;
+    } else if (code === 'justbekirsponsor2014') {
+      update = { guaranteedSponsor: true };
+      success = true;
+    } else if (code === 'decode2014') {
+      update = { guaranteedSponsor: false };
+      success = true;
+    } else if (code === 'justbekirelon2014') {
+      update = { isElonModeUnlocked: true };
+      success = true;
+    } else if (code === 'justbekirbillgates2014') {
+      update = { isBillModeUnlocked: true };
+      success = true;
     }
 
     if (success) {
@@ -208,7 +392,7 @@ const App: React.FC = () => {
 
   const buyItem = (item: ShopItem) => {
     if (state.money < item.price) {
-      addNotification(t.invalidCode, "error");
+      addNotification(state.language === 'tr' ? "Yetersiz Bakiye!" : "Not enough money!", "error");
       return;
     }
     if (state.inventory.includes(item.id)) return;
@@ -219,6 +403,55 @@ const App: React.FC = () => {
       inventory: [...prev.inventory, item.id]
     }));
     addNotification(`${item.name[state.language]} ${t.buy}!`, "success");
+  };
+
+  const handleElonAction = (id: string, type: 'buy' | 'sell') => {
+    const item = ELON_ITEMS.find(i => i.id === id);
+    if (!item) return;
+
+    setState(prev => {
+      const currentQty = prev.elonPurchases?.[id] || 0;
+      const newQty = type === 'buy' ? currentQty + 1 : Math.max(0, currentQty - 1);
+      const newPurchases: Record<string, number> = { ...(prev.elonPurchases || {}), [id]: newQty };
+      let totalSpent = 0;
+      Object.entries(newPurchases).forEach(([itemId, qty]) => {
+        const it = ELON_ITEMS.find(i => i.id === itemId);
+        if (it) totalSpent += it.price * (qty as number);
+      });
+      if (totalSpent > ELON_BUDGET) return prev;
+      return { ...prev, elonPurchases: newPurchases };
+    });
+  };
+
+  const handleBillAction = (id: string, type: 'buy' | 'sell') => {
+    const item = BILL_ITEMS.find(i => i.id === id);
+    if (!item) return;
+
+    setState(prev => {
+      const currentQty = prev.billPurchases?.[id] || 0;
+      const newQty = type === 'buy' ? currentQty + 1 : Math.max(0, currentQty - 1);
+      const newPurchases: Record<string, number> = { ...(prev.billPurchases || {}), [id]: newQty };
+      let totalSpent = 0;
+      Object.entries(newPurchases).forEach(([itemId, qty]) => {
+        const it = BILL_ITEMS.find(i => i.id === itemId);
+        if (it) totalSpent += it.price * (qty as number);
+      });
+      if (totalSpent > BILL_BUDGET) return prev;
+      return { ...prev, billPurchases: newPurchases };
+    });
+  };
+
+  const eatAtRestaurant = (restaurant: typeof RESTAURANTS[0]) => {
+    if (state.money < restaurant.price) {
+      addNotification(state.language === 'tr' ? "Yetersiz Bakiye!" : "Not enough money!", "error");
+      return;
+    }
+    setState(prev => ({ 
+      ...prev, 
+      money: prev.money - restaurant.price,
+      activeRestaurant: restaurant.id as any 
+    }));
+    addNotification(`${restaurant.name} ${t.visit}!`, 'success');
   };
 
   const onAcceptSponsor = (sponsor: Sponsorship) => {
@@ -245,6 +478,17 @@ const App: React.FC = () => {
     );
   }
 
+  const tabs = [
+    { id: 'main', label: t.main },
+    { id: 'gemini', label: 'Gemini Lab', icon: '✨' },
+    { id: 'shop', label: t.shop },
+    ...(state.isElonModeUnlocked ? [{ id: 'elon', label: t.elonTitle, icon: '💰' }] : []),
+    ...(state.isBillModeUnlocked ? [{ id: 'bill', label: t.billTitle, icon: '💳' }] : []),
+    { id: 'inventory', label: t.inventory },
+    { id: 'restaurant', label: t.restaurant },
+    { id: 'settings', label: t.settings }
+  ];
+
   return (
     <div className="h-screen bg-slate-950 text-slate-200 flex flex-col overflow-hidden sm:text-base text-sm">
       <StatsBar state={state} />
@@ -260,14 +504,15 @@ const App: React.FC = () => {
       )}
 
       {/* Tabs Navigation */}
-      <nav className="flex justify-center gap-1 sm:gap-4 p-2 sm:p-4 bg-slate-900 border-b border-slate-800 shrink-0">
-        {['main', 'shop', 'inventory', 'settings'].map((tab) => (
+      <nav className="flex justify-center flex-wrap gap-1 sm:gap-4 p-2 sm:p-4 bg-slate-900 border-b border-slate-800 shrink-0">
+        {tabs.map((tab) => (
           <button 
-            key={tab}
-            onClick={() => setCurrentTab(tab as any)}
-            className={`px-4 py-2 rounded-xl font-bold transition-all text-xs sm:text-sm uppercase tracking-wider ${currentTab === tab ? 'bg-blue-600 text-white shadow-lg' : 'text-slate-400 hover:bg-slate-800'}`}
+            key={tab.id}
+            onClick={() => setCurrentTab(tab.id as any)}
+            className={`px-3 py-2 rounded-xl font-bold transition-all text-[10px] sm:text-xs uppercase tracking-wider flex items-center gap-2 ${currentTab === tab.id ? 'bg-blue-600 text-white shadow-lg' : 'text-slate-400 hover:bg-slate-800'}`}
           >
-            {t[tab as keyof typeof t] || tab}
+            {tab.icon && <span>{tab.icon}</span>}
+            {tab.label}
           </button>
         ))}
       </nav>
@@ -299,7 +544,6 @@ const App: React.FC = () => {
                 </div>
               </div>
 
-              {/* Strategy/Description Section */}
               <div className="bg-slate-900 border border-slate-800 rounded-3xl p-5 shadow-sm border-l-4 border-l-blue-500">
                 <h2 className="text-[10px] font-black mb-2 uppercase text-blue-400 tracking-widest">{t.strategy}</h2>
                 <p className="text-xs text-slate-400 leading-relaxed italic">
@@ -322,34 +566,116 @@ const App: React.FC = () => {
             </div>
 
             <div className="flex flex-col gap-3">
-              <button 
-                onClick={() => handleAction('video')} 
-                className="p-6 bg-blue-600 hover:bg-blue-500 rounded-3xl font-black uppercase shadow-lg active:scale-95 transition-all text-white flex flex-col items-center gap-1"
-              >
+              <button onClick={() => handleAction('video')} className="p-6 bg-blue-600 hover:bg-blue-500 rounded-3xl font-black uppercase shadow-lg active:scale-95 transition-all text-white flex flex-col items-center gap-1">
                 <span className="text-xl">{t.uploadVideo}</span>
                 <span className="text-[9px] opacity-60 normal-case font-normal tracking-wider">{t.videoBtnDesc}</span>
               </button>
-              <button 
-                onClick={() => handleAction('promo')} 
-                className="p-4 bg-indigo-600 hover:bg-indigo-500 rounded-3xl font-black uppercase shadow-md active:scale-95 transition-all text-white flex flex-col items-center gap-1"
-              >
+              <button onClick={() => handleAction('cooking')} className="p-4 bg-orange-600 hover:bg-orange-500 rounded-3xl font-black uppercase shadow-lg active:scale-95 transition-all text-white flex flex-col items-center gap-1">
+                <span className="text-sm">{t.uploadCooking}</span>
+                <span className="text-[8px] opacity-60 normal-case font-normal tracking-wider">{t.cookingBtnDesc}</span>
+              </button>
+              <button onClick={() => handleAction('promo')} className="p-4 bg-indigo-600 hover:bg-indigo-500 rounded-3xl font-black uppercase shadow-md active:scale-95 transition-all text-white flex flex-col items-center gap-1">
                 <span className="text-sm">{t.brandPromo}</span>
                 <span className="text-[8px] opacity-60 normal-case font-normal tracking-wider">{t.promoBtnDesc}</span>
               </button>
-              <button 
-                onClick={() => handleAction('project')} 
-                className="p-4 bg-emerald-600 hover:bg-emerald-500 rounded-3xl font-black uppercase shadow-md active:scale-95 transition-all text-white flex flex-col items-center gap-1"
-              >
+              <button onClick={() => handleAction('project')} className="p-4 bg-emerald-600 hover:bg-emerald-500 rounded-3xl font-black uppercase shadow-md active:scale-95 transition-all text-white flex flex-col items-center gap-1">
                 <span className="text-sm">{t.newProject}</span>
                 <span className="text-[8px] opacity-60 normal-case font-normal tracking-wider">{t.projectBtnDesc}</span>
               </button>
-              <button 
-                onClick={() => handleAction('cheat')} 
-                className="p-4 bg-amber-900/10 border border-dashed border-amber-500/50 rounded-3xl text-amber-500 font-bold active:scale-95 transition-all uppercase flex flex-col items-center gap-1"
-              >
+              <button onClick={() => handleAction('cheat')} className="p-4 bg-amber-900/10 border border-dashed border-amber-500/50 rounded-3xl text-amber-500 font-bold active:scale-95 transition-all uppercase flex flex-col items-center gap-1">
                 <span className="text-sm">{t.uploadCheat}</span>
                 <span className="text-[8px] opacity-60 normal-case font-normal tracking-wider">{t.cheatBtnDesc}</span>
               </button>
+            </div>
+          </div>
+        )}
+
+        {currentTab === 'gemini' && (
+          <div className="w-full max-w-2xl bg-slate-900 border border-slate-800 rounded-3xl p-8 shadow-2xl space-y-6 relative overflow-hidden">
+            <div className="absolute top-0 right-0 w-32 h-32 bg-blue-500/10 blur-3xl pointer-events-none rounded-full"></div>
+            <div className="flex items-center gap-4 mb-2">
+               <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-purple-600 rounded-2xl flex items-center justify-center text-2xl shadow-lg">✨</div>
+               <div>
+                 <h2 className="text-2xl font-black uppercase text-white tracking-tight">Gemini AI Lab</h2>
+                 <p className="text-xs text-slate-400 font-medium italic">"Tell Gemini what to add..."</p>
+               </div>
+            </div>
+            <div className="space-y-4">
+              <textarea 
+                value={aiPrompt}
+                onChange={(e) => setAiPrompt(e.target.value)}
+                placeholder={state.language === 'tr' ? "Sadece özellik ekleyebilir. Kaynak veremez. (Kodsuz)" : "Can only add features. Cannot give resources without code."}
+                className="w-full h-32 bg-slate-800 border-2 border-slate-700 rounded-2xl p-4 text-sm focus:outline-none focus:border-blue-500 text-white resize-none transition-all placeholder:text-slate-500"
+              />
+              <button onClick={handleGeminiLab} disabled={isAiLoading || !aiPrompt.trim()} className={`w-full py-4 rounded-2xl font-black uppercase tracking-widest text-sm shadow-xl transition-all relative overflow-hidden group ${isAiLoading ? 'bg-slate-800 text-slate-600 cursor-not-allowed' : 'bg-gradient-to-r from-blue-600 to-purple-600 hover:scale-[1.02] active:scale-95 text-white'}`}>
+                {isAiLoading ? "AI IS THINKING..." : "EXECUTE PROMPT"}
+              </button>
+            </div>
+          </div>
+        )}
+
+        {currentTab === 'elon' && (
+          <div className="w-full max-w-6xl flex flex-col gap-6 pb-20">
+            <div className="sticky top-0 z-40 bg-slate-950/80 backdrop-blur-md p-6 border border-slate-800 rounded-3xl shadow-xl flex flex-col items-center gap-2">
+              <h2 className="text-2xl font-black text-white uppercase">{t.elonTitle}</h2>
+              <div className="text-3xl font-black text-emerald-400 tabular-nums">
+                $ {elonStats.remaining.toLocaleString()}
+              </div>
+              <p className="text-[10px] text-slate-500 uppercase font-bold">{t.elonDesc}</p>
+            </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+              {ELON_ITEMS.map(item => {
+                const qty = state.elonPurchases?.[item.id] || 0;
+                return (
+                  <div key={item.id} className="bg-slate-900 border border-slate-800 rounded-2xl overflow-hidden flex flex-col group">
+                    <img src={item.image} className="h-32 w-full object-cover group-hover:scale-105 transition-transform" />
+                    <div className="p-4 flex flex-col gap-3">
+                      <div className="flex justify-between items-start">
+                        <h4 className="font-bold text-white text-sm uppercase">{item.name[state.language]}</h4>
+                        <span className="text-emerald-400 text-xs font-black">$ {item.price.toLocaleString()}</span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <button onClick={() => handleElonAction(item.id, 'sell')} disabled={qty === 0} className="flex-1 py-2 bg-red-600/20 border border-red-500/50 text-red-500 text-[10px] font-black rounded-lg hover:bg-red-500 hover:text-white transition-all disabled:opacity-20">{t.sell}</button>
+                        <div className="w-12 text-center text-sm font-black text-white">{qty}</div>
+                        <button onClick={() => handleElonAction(item.id, 'buy')} disabled={elonStats.remaining < item.price} className="flex-1 py-2 bg-emerald-600/20 border border-emerald-500/50 text-emerald-500 text-[10px] font-black rounded-lg hover:bg-emerald-500 hover:text-white transition-all disabled:opacity-20">{t.buy}</button>
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        )}
+
+        {currentTab === 'bill' && (
+          <div className="w-full max-w-6xl flex flex-col gap-6 pb-20">
+            <div className="sticky top-0 z-40 bg-slate-950/80 backdrop-blur-md p-6 border border-slate-800 rounded-3xl shadow-xl flex flex-col items-center gap-2">
+              <h2 className="text-2xl font-black text-white uppercase">{t.billTitle}</h2>
+              <div className="text-3xl font-black text-blue-400 tabular-nums">
+                $ {billStats.remaining.toLocaleString()}
+              </div>
+              <p className="text-[10px] text-slate-500 uppercase font-bold">{t.billDesc}</p>
+            </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+              {BILL_ITEMS.map(item => {
+                const qty = state.billPurchases?.[item.id] || 0;
+                return (
+                  <div key={item.id} className="bg-slate-900 border border-slate-800 rounded-2xl overflow-hidden flex flex-col group">
+                    <img src={item.image} className="h-32 w-full object-cover group-hover:scale-105 transition-transform" />
+                    <div className="p-4 flex flex-col gap-3">
+                      <div className="flex justify-between items-start">
+                        <h4 className="font-bold text-white text-sm uppercase">{item.name[state.language]}</h4>
+                        <span className="text-blue-400 text-xs font-black">$ {item.price.toLocaleString()}</span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <button onClick={() => handleBillAction(item.id, 'sell')} disabled={qty === 0} className="flex-1 py-2 bg-red-600/20 border border-red-500/50 text-red-500 text-[10px] font-black rounded-lg hover:bg-red-500 hover:text-white transition-all disabled:opacity-20">{t.sell}</button>
+                        <div className="w-12 text-center text-sm font-black text-white">{qty}</div>
+                        <button onClick={() => handleBillAction(item.id, 'buy')} disabled={billStats.remaining < item.price} className="flex-1 py-2 bg-blue-600/20 border border-blue-500/50 text-blue-500 text-[10px] font-black rounded-lg hover:bg-blue-500 hover:text-white transition-all disabled:opacity-20">{t.buy}</button>
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
             </div>
           </div>
         )}
@@ -364,10 +690,7 @@ const App: React.FC = () => {
                   <div className="p-6 flex-1 flex flex-col">
                     <h3 className="font-bold text-white mb-2 text-lg uppercase tracking-tight">{item.name[state.language]}</h3>
                     <p className="text-xs text-slate-400 mb-6 flex-1 leading-relaxed">{item.description[state.language]}</p>
-                    <button 
-                      onClick={() => buyItem(item)} disabled={owned}
-                      className={`w-full py-3 rounded-xl font-bold transition-all uppercase text-xs tracking-widest ${owned ? 'bg-slate-800 text-slate-500' : 'bg-emerald-600 hover:bg-emerald-500 text-white shadow-md'}`}
-                    >
+                    <button onClick={() => buyItem(item)} disabled={owned} className={`w-full py-3 rounded-xl font-bold transition-all uppercase text-xs tracking-widest ${owned ? 'bg-slate-800 text-slate-500' : 'bg-emerald-600 hover:bg-emerald-500 text-white shadow-md'}`}>
                       {owned ? t.owned : `${item.price.toLocaleString()} ₺`}
                     </button>
                   </div>
@@ -380,18 +703,14 @@ const App: React.FC = () => {
         {currentTab === 'inventory' && (
           <div className="w-full max-w-4xl pb-20">
             {state.inventory.length === 0 ? (
-              <div className="py-24 text-center border-2 border-dashed border-slate-800 rounded-3xl text-slate-500 italic uppercase tracking-widest text-xs">
-                {t.noItems}
-              </div>
+              <div className="py-24 text-center border-2 border-dashed border-slate-800 rounded-3xl text-slate-500 italic uppercase tracking-widest text-xs">{t.noItems}</div>
             ) : (
               <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
                 {state.inventory.map(id => {
                   const item = SHOP_ITEMS.find(i => i.id === id);
                   return item && (
                     <div key={id} className="bg-slate-900 p-5 rounded-3xl border border-slate-800 flex flex-col items-center text-center shadow-sm">
-                      <div className="w-16 h-16 rounded-xl overflow-hidden mb-3">
-                        <img src={item.image} className="w-full h-full object-cover" alt={item.name[state.language]} />
-                      </div>
+                      <div className="w-16 h-16 rounded-xl overflow-hidden mb-3"><img src={item.image} className="w-full h-full object-cover" /></div>
                       <span className="text-[10px] font-bold text-white uppercase tracking-tighter leading-tight">{item.name[state.language]}</span>
                       <span className="text-[8px] text-blue-400 mt-1 uppercase font-black">x{item.multiplier} BOOST</span>
                     </div>
@@ -399,6 +718,22 @@ const App: React.FC = () => {
                 })}
               </div>
             )}
+          </div>
+        )}
+
+        {currentTab === 'restaurant' && (
+          <div className="w-full max-w-5xl grid grid-cols-1 sm:grid-cols-3 gap-6 pb-20">
+            {RESTAURANTS.map(res => (
+              <div key={res.id} className={`bg-slate-900 border ${state.activeRestaurant === res.id ? 'border-orange-500 shadow-orange-500/20 shadow-lg' : 'border-slate-800'} rounded-3xl p-6 flex flex-col items-center text-center transition-all`}>
+                <div className="w-24 h-24 mb-4 flex items-center justify-center bg-white rounded-full p-2 overflow-hidden"><img src={res.logo} className="w-full h-full object-contain" /></div>
+                <h3 className="text-xl font-black text-white uppercase mb-1">{res.name}</h3>
+                <p className="text-emerald-400 font-bold mb-4 text-sm">{res.price.toLocaleString()} ₺</p>
+                <p className="text-xs text-slate-400 mb-6 flex-1 italic">{res.desc[state.language]}</p>
+                <button onClick={() => eatAtRestaurant(res)} className={`w-full py-3 rounded-xl font-bold uppercase text-[10px] tracking-widest transition-all ${state.activeRestaurant === res.id ? 'bg-orange-600 text-white' : 'bg-slate-800 text-slate-400 hover:bg-slate-700'}`}>
+                  {state.activeRestaurant === res.id ? t.active : t.visit}
+                </button>
+              </div>
+            ))}
           </div>
         )}
 
@@ -411,14 +746,6 @@ const App: React.FC = () => {
                 <button onClick={() => setState(p => ({ ...p, language: 'en' }))} className={`py-3 rounded-xl font-bold uppercase text-xs tracking-widest transition-all ${state.language === 'en' ? 'bg-blue-600 text-white' : 'bg-slate-800 text-slate-400 hover:bg-slate-700'}`}>English</button>
                 <button onClick={() => setState(p => ({ ...p, language: 'tr' }))} className={`py-3 rounded-xl font-bold uppercase text-xs tracking-widest transition-all ${state.language === 'tr' ? 'bg-blue-600 text-white' : 'bg-slate-800 text-slate-400 hover:bg-slate-700'}`}>Türkçe</button>
               </div>
-            </div>
-            <div className="pt-8 border-t border-slate-800">
-              <button 
-                onClick={() => { if(window.confirm(t.confirmWipe)) { localStorage.removeItem(SAVE_KEY); window.location.reload(); }}}
-                className="w-full py-4 bg-red-900/10 text-red-500 font-bold rounded-xl border border-red-900/40 hover:bg-red-900/20 transition-all uppercase text-[10px] tracking-widest"
-              >
-                {t.deleteSave}
-              </button>
             </div>
           </div>
         )}
