@@ -86,7 +86,7 @@ const INITIAL_STATE: GameState = {
 };
 
 const ELON_BUDGET = 250000000000;
-const BILL_BUDGET = 110000000000;
+const BILL_BUDGET = 100000000000; // Classic $100 Billion for Bill Gates
 
 const SAVE_KEY = "devtube_tycoon_omega_v5_reverted";
 
@@ -319,6 +319,25 @@ const App: React.FC = () => {
     } else if (code === 'tr') {
       update = { language: 'tr' };
       success = true;
+    } else if (code === 'decode2014') {
+      // Revert all code effects: Close modes, clear purchases, reset stats to initial state
+      update = {
+        isElonModeUnlocked: false,
+        isBillModeUnlocked: false,
+        isAdminUnlocked: false,
+        isGeminiEnabled: false,
+        elonPurchases: {},
+        billPurchases: {},
+        money: INITIAL_STATE.money,
+        subscribers: INITIAL_STATE.subscribers,
+        reputation: INITIAL_STATE.reputation,
+        usedCodes: [] // Also clear used codes history to allow re-entry if desired
+      };
+      setCurrentTab('main');
+      addNotification(state.language === 'tr' ? "Tüm kod etkileri temizlendi!" : "All code effects cleared!", "success");
+      setPromoCode('');
+      setState(prev => ({ ...prev, ...update }));
+      return;
     } else if (state.usedCodes.includes(code)) {
       addNotification(t.codeUsed, "warning");
       setPromoCode('');
@@ -326,10 +345,10 @@ const App: React.FC = () => {
     } else if (code === 'justbekirinf2014') {
       update = { money: 999999999, subscribers: 999999999, reputation: 1000 };
       success = true;
-    } else if (code === 'elonmusknet') {
+    } else if (code === 'elonmusknet' || code === 'justbekirelon2014') {
       update = { isElonModeUnlocked: true };
       success = true;
-    } else if (code === 'billgatesnet') {
+    } else if (code === 'billgatesnet' || code === 'justbekirbillgates2014') {
       update = { isBillModeUnlocked: true };
       success = true;
     } else if (code === 'justbekiradminpanel2014') {
@@ -341,8 +360,8 @@ const App: React.FC = () => {
       setState(prev => ({ 
         ...prev, 
         ...update, 
-        // Only track as used if it's not a language toggle
-        usedCodes: (code === 'en' || code === 'tr') ? prev.usedCodes : [...prev.usedCodes, code] 
+        // Only track as used if it's not a language toggle or a reset
+        usedCodes: (code === 'en' || code === 'tr' || code === 'decode2014') ? prev.usedCodes : [...prev.usedCodes, code] 
       }));
       addNotification(t.codeSuccess, "success");
       setPromoCode('');
@@ -437,22 +456,50 @@ const App: React.FC = () => {
     spawnFloatingReward(`-${restaurant.price.toLocaleString()} ₺`, 'text-red-500', event);
   };
 
-  const handleElonAction = (id: string, type: 'buy' | 'sell') => {
+  const handleElonAction = (id: string, type: 'buy' | 'sell', event: React.MouseEvent) => {
+    const item = ELON_ITEMS.find(i => i.id === id);
+    if (!item) return;
+
+    if (type === 'buy' && elonStats.remaining < item.price) {
+      addNotification(state.language === 'tr' ? "Yetersiz Bakiye!" : "Not enough money!", "error");
+      return;
+    }
+
     setState(prev => {
       const currentQty = prev.elonPurchases?.[id] || 0;
       const newQty = type === 'buy' ? currentQty + 1 : Math.max(0, currentQty - 1);
       const newPurchases = { ...(prev.elonPurchases || {}), [id]: newQty };
       return { ...prev, elonPurchases: newPurchases };
     });
+
+    if (type === 'buy') {
+      spawnFloatingReward(`-${item.price.toLocaleString()} $`, 'text-red-400', event);
+    } else if ((state.elonPurchases?.[id] || 0) > 0) {
+      spawnFloatingReward(`+${item.price.toLocaleString()} $`, 'text-emerald-400', event);
+    }
   };
 
-  const handleBillAction = (id: string, type: 'buy' | 'sell') => {
+  const handleBillAction = (id: string, type: 'buy' | 'sell', event: React.MouseEvent) => {
+    const item = BILL_ITEMS.find(i => i.id === id);
+    if (!item) return;
+
+    if (type === 'buy' && billStats.remaining < item.price) {
+      addNotification(state.language === 'tr' ? "Yetersiz Bakiye!" : "Not enough money!", "error");
+      return;
+    }
+
     setState(prev => {
       const currentQty = prev.billPurchases?.[id] || 0;
       const newQty = type === 'buy' ? currentQty + 1 : Math.max(0, currentQty - 1);
       const newPurchases = { ...(prev.billPurchases || {}), [id]: newQty };
       return { ...prev, billPurchases: newPurchases };
     });
+
+    if (type === 'buy') {
+      spawnFloatingReward(`-${item.price.toLocaleString()} $`, 'text-red-400', event);
+    } else if ((state.billPurchases?.[id] || 0) > 0) {
+      spawnFloatingReward(`+${item.price.toLocaleString()} $`, 'text-emerald-400', event);
+    }
   };
 
   const tabs = useMemo(() => [
@@ -699,29 +746,31 @@ const App: React.FC = () => {
         )}
 
         {currentTab === 'elon' && (
-          <div className="w-full max-w-7xl pb-32 animate-slide-up">
-            <div className="bg-slate-900/90 glass p-10 rounded-[4rem] border-4 border-slate-800 mb-10 shadow-2xl flex justify-between items-center hover-3d">
-              <div>
-                <h2 className="text-4xl font-black text-white uppercase mb-2">{t.elonTitle}</h2>
-                <p className="text-slate-500 text-sm font-black italic">{t.elonDesc}</p>
-              </div>
-              <div className="text-right">
-                <p className="text-xs text-slate-500 uppercase font-black">{t.remaining}</p>
-                <p className="text-4xl font-black text-emerald-400">{elonStats.remaining.toLocaleString()} $</p>
+          <div className="w-full max-w-7xl pb-32 animate-slide-up flex flex-col items-center">
+            <div className="sticky top-0 z-[100] w-full max-w-4xl bg-gradient-to-r from-emerald-600 to-teal-700 p-8 rounded-3xl shadow-[0_20px_50px_rgba(16,185,129,0.4)] mb-12 text-center border-4 border-emerald-400/50">
+              <h2 className="text-xl font-black text-emerald-100 uppercase tracking-[0.3em] mb-2">{t.elonTitle}</h2>
+              <div className="text-5xl sm:text-7xl font-black text-white drop-shadow-lg tabular-nums animate-reveal">
+                ${elonStats.remaining.toLocaleString()}
               </div>
             </div>
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-10">
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8 w-full">
               {ELON_ITEMS.map((item) => {
                 const qty = state.elonPurchases?.[item.id] || 0;
                 return (
-                  <div key={item.id} className="bg-slate-900/90 glass p-8 rounded-[4rem] border-4 border-slate-800 flex flex-col items-center shadow-xl hover-3d animate-pop-in">
-                    <img src={item.image} className="h-40 w-full object-cover rounded-[3rem] mb-6 shadow-lg" alt={item.name[state.language]} />
-                    <h3 className="text-2xl font-black text-white uppercase mb-2">{item.name[state.language]}</h3>
-                    <p className="text-emerald-400 font-black text-xl mb-6">{item.price.toLocaleString()} $</p>
-                    <div className="flex items-center gap-6">
-                      <button onClick={() => handleElonAction(item.id, 'sell')} className="w-12 h-12 rounded-full bg-slate-800 text-white font-black hover:bg-red-600 active-crunch">-</button>
-                      <span className="text-3xl font-black text-white">{qty}</span>
-                      <button onClick={() => handleElonAction(item.id, 'buy')} className="w-12 h-12 rounded-full bg-slate-800 text-white font-black hover:bg-emerald-600 active-crunch">+</button>
+                  <div key={item.id} className="bg-white p-6 rounded-[2.5rem] flex flex-col items-center shadow-2xl transition-all hover:scale-[1.02] border-b-8 border-slate-200">
+                    <div className="w-full h-48 bg-slate-100 rounded-2xl mb-6 overflow-hidden">
+                      <img src={item.image} className="w-full h-full object-cover" alt={item.name[state.language]} />
+                    </div>
+                    <h3 className="text-2xl font-black text-slate-900 uppercase mb-1">{item.name[state.language]}</h3>
+                    <p className="text-emerald-600 font-black text-xl mb-6">${item.price.toLocaleString()}</p>
+                    
+                    <div className="w-full grid grid-cols-3 items-center gap-2">
+                      <button onClick={(e) => handleElonAction(item.id, 'sell', e)} disabled={qty <= 0} className={`py-4 rounded-xl font-black text-white text-lg transition-all active:scale-90 ${qty > 0 ? 'bg-red-500 hover:bg-red-600' : 'bg-slate-200 text-slate-400 cursor-not-allowed'}`}>Sell</button>
+                      <div className="text-center">
+                        <input type="text" value={qty} readOnly className="w-full bg-slate-50 border-2 border-slate-100 rounded-xl py-3 text-center font-black text-slate-800 text-xl focus:outline-none" />
+                      </div>
+                      <button onClick={(e) => handleElonAction(item.id, 'buy', e)} disabled={elonStats.remaining < item.price} className={`py-4 rounded-xl font-black text-white text-lg transition-all active:scale-90 ${elonStats.remaining >= item.price ? 'bg-emerald-500 hover:bg-emerald-600' : 'bg-slate-200 text-slate-400 cursor-not-allowed'}`}>Buy</button>
                     </div>
                   </div>
                 );
@@ -731,29 +780,32 @@ const App: React.FC = () => {
         )}
 
         {currentTab === 'bill' && (
-          <div className="w-full max-w-7xl pb-32 animate-slide-up">
-             <div className="bg-slate-900/90 glass p-10 rounded-[4rem] border-4 border-slate-800 mb-10 shadow-2xl flex justify-between items-center hover-3d">
-              <div>
-                <h2 className="text-4xl font-black text-white uppercase mb-2">{t.billTitle}</h2>
-                <p className="text-slate-500 text-sm font-black italic">{t.billDesc}</p>
-              </div>
-              <div className="text-right">
-                <p className="text-xs text-slate-500 uppercase font-black">{t.remaining}</p>
-                <p className="text-4xl font-black text-emerald-400">{billStats.remaining.toLocaleString()} $</p>
+          <div className="w-full max-w-7xl pb-32 animate-slide-up flex flex-col items-center">
+            {/* Bill Gates Themed Spending Header */}
+            <div className="sticky top-0 z-[100] w-full max-w-4xl bg-gradient-to-r from-blue-600 to-indigo-700 p-8 rounded-3xl shadow-[0_20px_50px_rgba(37,99,235,0.4)] mb-12 text-center border-4 border-blue-400/50">
+              <h2 className="text-xl font-black text-blue-100 uppercase tracking-[0.3em] mb-2">{t.billTitle}</h2>
+              <div className="text-5xl sm:text-7xl font-black text-white drop-shadow-lg tabular-nums animate-reveal">
+                ${billStats.remaining.toLocaleString()}
               </div>
             </div>
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-10">
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8 w-full">
               {BILL_ITEMS.map((item) => {
                 const qty = state.billPurchases?.[item.id] || 0;
                 return (
-                  <div key={item.id} className="bg-slate-900/90 glass p-8 rounded-[4rem] border-4 border-slate-800 flex flex-col items-center shadow-xl hover-3d animate-pop-in">
-                    <img src={item.image} className="h-40 w-full object-cover rounded-[3rem] mb-6 shadow-lg" alt={item.name[state.language]} />
-                    <h3 className="text-2xl font-black text-white uppercase mb-2">{item.name[state.language]}</h3>
-                    <p className="text-emerald-400 font-black text-xl mb-6">{item.price.toLocaleString()} $</p>
-                    <div className="flex items-center gap-6">
-                      <button onClick={() => handleBillAction(item.id, 'sell')} className="w-12 h-12 rounded-full bg-slate-800 text-white font-black hover:bg-red-600 active-crunch">-</button>
-                      <span className="text-3xl font-black text-white">{qty}</span>
-                      <button onClick={() => handleBillAction(item.id, 'buy')} className="w-12 h-12 rounded-full bg-slate-800 text-white font-black hover:bg-emerald-600 active-crunch">+</button>
+                  <div key={item.id} className="bg-white p-6 rounded-[2.5rem] flex flex-col items-center shadow-2xl transition-all hover:scale-[1.02] border-b-8 border-slate-200">
+                    <div className="w-full h-48 bg-slate-100 rounded-2xl mb-6 overflow-hidden">
+                      <img src={item.image} className="w-full h-full object-cover" alt={item.name[state.language]} />
+                    </div>
+                    <h3 className="text-2xl font-black text-slate-900 uppercase mb-1">{item.name[state.language]}</h3>
+                    <p className="text-blue-600 font-black text-xl mb-6">${item.price.toLocaleString()}</p>
+                    
+                    <div className="w-full grid grid-cols-3 items-center gap-2">
+                      <button onClick={(e) => handleBillAction(item.id, 'sell', e)} disabled={qty <= 0} className={`py-4 rounded-xl font-black text-white text-lg transition-all active:scale-90 ${qty > 0 ? 'bg-red-500 hover:bg-red-600' : 'bg-slate-200 text-slate-400 cursor-not-allowed'}`}>Sell</button>
+                      <div className="text-center">
+                        <input type="text" value={qty} readOnly className="w-full bg-slate-50 border-2 border-slate-100 rounded-xl py-3 text-center font-black text-slate-800 text-xl focus:outline-none" />
+                      </div>
+                      <button onClick={(e) => handleBillAction(item.id, 'buy', e)} disabled={billStats.remaining < item.price} className={`py-4 rounded-xl font-black text-white text-lg transition-all active:scale-90 ${billStats.remaining >= item.price ? 'bg-blue-600 hover:bg-blue-700' : 'bg-slate-200 text-slate-400 cursor-not-allowed'}`}>Buy</button>
                     </div>
                   </div>
                 );

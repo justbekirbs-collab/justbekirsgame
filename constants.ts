@@ -1,4 +1,3 @@
-
 import { Sponsorship, ShopItem, LocalizedString, ElonItem, BillItem } from './types.ts';
 
 // Defined milestones for subscriber goals
@@ -354,32 +353,50 @@ export const SHOP_ITEMS: ShopItem[] = [
 ];
 
 export const ELON_ITEMS: ElonItem[] = [
-  { id: 'mac', name: { en: 'Big Mac', tr: 'Big Mac' }, price: 2, image: 'https://images.unsplash.com/photo-1568901346375-23c9450c58cd?w=400' },
-  { id: 'shoes', name: { en: 'Flip Flops', tr: 'Parmak Arası Terlik' }, price: 3, image: 'https://images.unsplash.com/photo-1603487742131-4160ec999306?w=400' },
+  { id: 'burger', name: { en: 'Big Mac', tr: 'Big Mac' }, price: 2, image: 'https://images.unsplash.com/photo-1568901346375-23c9450c58cd?w=400' },
+  { id: 'shoes', name: { en: 'Flip Flops', tr: 'Terlik' }, price: 3, image: 'https://images.unsplash.com/photo-1603487742131-4160ec999306?w=400' },
+  { id: 'book', name: { en: 'Paperback Book', tr: 'Kitap' }, price: 15, image: 'https://images.unsplash.com/photo-1495446815901-a7297e633e8d?w=400' },
   { id: 'ps5', name: { en: 'PlayStation 5', tr: 'PlayStation 5' }, price: 499, image: 'https://m.media-amazon.com/images/I/619BkvKW35L._SL1500_.jpg' },
-  { id: 'pc', name: { en: 'Gaming PC', tr: 'Gaming PC' }, price: 2500, image: 'https://images.unsplash.com/photo-1587202372775-e229f172b9d7?w=400' },
-  { id: 'watch', name: { en: 'Rolex', tr: 'Rolex' }, price: 15000, image: 'https://images.unsplash.com/photo-1523170335258-f5ed11844a49?w=400' },
+  { id: 'pc', name: { en: 'High-end Gaming PC', tr: 'Oyuncu Bilgisayarı' }, price: 2500, image: 'https://images.unsplash.com/photo-1587202372775-e229f172b9d7?w=400' },
+  { id: 'watch', name: { en: 'Rolex Watch', tr: 'Rolex Saat' }, price: 15000, image: 'https://images.unsplash.com/photo-1523170335258-f5ed11844a49?w=400' },
   { id: 'tesla', name: { en: 'Tesla Model S', tr: 'Tesla Model S' }, price: 75000, image: 'https://images.unsplash.com/photo-1560958089-b8a1929cea89?w=400' },
   { id: 'ferrari', name: { en: 'Ferrari F8', tr: 'Ferrari F8' }, price: 250000, image: 'https://images.unsplash.com/photo-1592198084033-aade902d1aae?w=400' },
-  { id: 'home', name: { en: 'Luxury Home', tr: 'Lüks Ev' }, price: 300000, image: 'https://images.unsplash.com/photo-1512917774080-9991f1c4c750?w=400' },
-  { id: 'yacht', name: { en: 'Super Yacht', tr: 'Süper Yat' }, price: 7500000, image: 'https://images.unsplash.com/photo-1567899378494-47b22a2ae96a?w=400' },
-  { id: 'm1', name: { en: 'M1 Abrams', tr: 'M1 Abrams Tank' }, price: 8000000, image: 'https://images.unsplash.com/photo-1593079831268-3381b0db4a77?w=400' },
-  { id: 'jet', name: { en: 'Private Jet', tr: 'Özel Jet' }, price: 148000000, image: 'https://images.unsplash.com/photo-1540962351504-03099e0a754b?w=400' },
+  { id: 'home', name: { en: 'Luxury Mansion', tr: 'Lüks Köşk' }, price: 5000000, image: 'https://images.unsplash.com/photo-1512917774080-9991f1c4c750?w=400' },
+  { id: 'yacht', name: { en: 'Super Yacht', tr: 'Süper Yat' }, price: 10000000, image: 'https://images.unsplash.com/photo-1567899378494-47b22a2ae96a?w=400' },
+  { id: 'jet', name: { en: 'Private Jet', tr: 'Özel Jet' }, price: 150000000, image: 'https://images.unsplash.com/photo-1540962351504-03099e0a754b?w=400' },
   { id: 'mona', name: { en: 'Mona Lisa', tr: 'Mona Lisa' }, price: 860000000, image: 'https://images.unsplash.com/photo-1580136608260-4eb11f49a24e?w=400' },
   { id: 'sky', name: { en: 'Skyscraper', tr: 'Gökdelen' }, price: 1200000000, image: 'https://images.unsplash.com/photo-1477959858617-67f85cf4f1df?w=400' },
   { id: 'nba', name: { en: 'NBA Team', tr: 'NBA Takımı' }, price: 2500000000, image: 'https://images.unsplash.com/photo-1504450758481-7338eba7524a?w=400' },
-  { id: 'rocket', name: { en: 'SpaceX Rocket', tr: 'SpaceX Roketi' }, price: 5000000000, image: 'https://images.unsplash.com/photo-1517976487492-5750f3195933?w=400' }
+  { id: 'rocket', name: { en: 'SpaceX Falcon 9', tr: 'SpaceX Roketi' }, price: 62000000, image: 'https://images.unsplash.com/photo-1517976487492-5750f3195933?w=400' }
 ];
 
 export const BILL_ITEMS: BillItem[] = [
+  { id: 'burger', name: { en: 'Big Mac', tr: 'Big Mac' }, price: 2, image: 'https://images.unsplash.com/photo-1568901346375-23c9450c58cd?w=400' },
+  { id: 'shoes', name: { en: 'Flip Flops', tr: 'Terlik' }, price: 3, image: 'https://images.unsplash.com/photo-1603487742131-4160ec999306?w=400' },
+  { id: 'cola', name: { en: 'Coca-Cola Pack', tr: 'Koli Coca-Cola' }, price: 5, image: 'https://images.unsplash.com/photo-1622708782596-13d9e605fa62?w=400' },
+  { id: 'movie', name: { en: 'Movie Ticket', tr: 'Sinema Bileti' }, price: 12, image: 'https://images.unsplash.com/photo-1489599849927-2ee91cede3ba?w=400' },
   { id: 'book', name: { en: 'Book', tr: 'Kitap' }, price: 15, image: 'https://images.unsplash.com/photo-1495446815901-a7297e633e8d?w=400' },
-  { id: 'xbox', name: { en: 'Xbox Series X', tr: 'Xbox Series X' }, price: 499, image: 'https://images.unsplash.com/photo-1621259182978-f09e5e2ca09a?w=400' },
-  { id: 'pc_bill', name: { en: 'Surface Studio', tr: 'Surface Studio' }, price: 3500, image: 'https://images.unsplash.com/photo-1522202176988-66273c2fd55f?w=400' },
-  { id: 'don_bill', name: { en: 'Charity Donation', tr: 'Bağış' }, price: 1000000, image: 'https://images.unsplash.com/photo-1488521787991-ed7bbaae773c?w=400' },
-  { id: 'museum', name: { en: 'Museum', tr: 'Müze' }, price: 50000000, image: 'https://images.unsplash.com/photo-1518998053574-53f1f61f9b86?w=400' },
-  { id: 'island', name: { en: 'Private Island', tr: 'Özel Ada' }, price: 150000000, image: 'https://images.unsplash.com/photo-1559128010-7c1ad6e1b6a5?w=400' },
-  { id: 'nfl', name: { en: 'NFL Team', tr: 'NFL Takımı' }, price: 4000000000, image: 'https://images.unsplash.com/photo-1566577739112-5180d4bf9390?w=400' },
-  { id: 'win_bill', name: { en: 'Microsoft Stake', tr: 'Microsoft Hissesi' }, price: 15000000000, image: 'https://images.unsplash.com/photo-1519389950473-47ba0277781c?w=400' }
+  { id: 'game', name: { en: 'Video Game', tr: 'Video Oyunu' }, price: 60, image: 'https://images.unsplash.com/photo-1550745165-9bc0b252726f?w=400' },
+  { id: 'amazon', name: { en: 'Amazon Echo', tr: 'Amazon Echo' }, price: 99, image: 'https://images.unsplash.com/photo-1543512214-318c7553f230?w=400' },
+  { id: 'airpods', name: { en: 'Airpods', tr: 'Airpods' }, price: 199, image: 'https://images.unsplash.com/photo-1588423770674-f2855ee82639?w=400' },
+  { id: 'ps5', name: { en: 'PS5', tr: 'PS5' }, price: 499, image: 'https://m.media-amazon.com/images/I/619BkvKW35L._SL1500_.jpg' },
+  { id: 'phone', name: { en: 'Smartphone', tr: 'Akıllı Telefon' }, price: 699, image: 'https://images.unsplash.com/photo-1511707171634-5f897ff02aa9?w=400' },
+  { id: 'gold', name: { en: 'Gold Bar', tr: 'Altın Külçesi' }, price: 700, image: 'https://images.unsplash.com/photo-1589758438368-0ad531db3366?w=400' },
+  { id: 'macbook', name: { en: 'MacBook Pro', tr: 'MacBook Pro' }, price: 1499, image: 'https://images.unsplash.com/photo-1517336714731-489689fd1ca8?w=400' },
+  { id: 'rolex', name: { en: 'Rolex', tr: 'Rolex' }, price: 15000, image: 'https://images.unsplash.com/photo-1523170335258-f5ed11844a49?w=400' },
+  { id: 'ford', name: { en: 'Ford F-150', tr: 'Ford F-150' }, price: 30000, image: 'https://images.unsplash.com/photo-1583121274602-3e2820c69888?w=400' },
+  { id: 'tesla', name: { en: 'Tesla', tr: 'Tesla' }, price: 75000, image: 'https://images.unsplash.com/photo-1560958089-b8a1929cea89?w=400' },
+  { id: 'ferrari', name: { en: 'Ferrari', tr: 'Ferrari' }, price: 250000, image: 'https://images.unsplash.com/photo-1592198084033-aade902d1aae?w=400' },
+  { id: 'home', name: { en: 'Single Family Home', tr: 'Müstakil Ev' }, price: 300000, image: 'https://images.unsplash.com/photo-1512917774080-9991f1c4c750?w=400' },
+  { id: 'mcdonalds', name: { en: 'McDonalds Franchise', tr: 'McDonalds Bayiliği' }, price: 1500000, image: 'https://images.unsplash.com/photo-1552566626-52f8b828add9?w=400' },
+  { id: 'yacht', name: { en: 'Yacht', tr: 'Yat' }, price: 7500000, image: 'https://images.unsplash.com/photo-1567899378494-47b22a2ae96a?w=400' },
+  { id: 'tank', name: { en: 'M1 Abrams', tr: 'M1 Abrams Tankı' }, price: 8000000, image: 'https://images.unsplash.com/photo-1593079831268-3381b0db4a77?w=400' },
+  { id: 'f1', name: { en: 'Formula 1 Car', tr: 'Formula 1 Arabası' }, price: 15000000, image: 'https://images.unsplash.com/photo-1502444330042-d1a1ddf9bb5b?w=400' },
+  { id: 'mansion', name: { en: 'Mansion', tr: 'Malikane' }, price: 45000000, image: 'https://images.unsplash.com/photo-1613977257363-707ba9348227?w=400' },
+  { id: 'jet', name: { en: 'Private Jet', tr: 'Özel Jet' }, price: 148000000, image: 'https://images.unsplash.com/photo-1540962351504-03099e0a754b?w=400' },
+  { id: 'mona', name: { en: 'Mona Lisa', tr: 'Mona Lisa' }, price: 860000000, image: 'https://images.unsplash.com/photo-1580136608260-4eb11f49a24e?w=400' },
+  { id: 'sky', name: { en: 'Skyscraper', tr: 'Gökdelen' }, price: 850000000, image: 'https://images.unsplash.com/photo-1477959858617-67f85cf4f1df?w=400' },
+  { id: 'nba', name: { en: 'NBA Team', tr: 'NBA Takımı' }, price: 2120000000, image: 'https://images.unsplash.com/photo-1504450758481-7338eba7524a?w=400' }
 ];
 
 export const getKFC_Sponsorship = (): Sponsorship => ({
