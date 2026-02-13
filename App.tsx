@@ -43,7 +43,7 @@ const INITIAL_STATE: GameState = {
   usedCodes: [],
   language: 'en',
   guaranteedSponsor: false,
-  sponsorLuck: 35, // 35% default
+  sponsorLuck: 35, // 35 default factor
   activeRestaurant: null,
   isElonModeUnlocked: false,
   elonPurchases: {},
@@ -103,6 +103,7 @@ const App: React.FC = () => {
   const [adminMoney, setAdminMoney] = useState<string>('');
   const [adminSubs, setAdminSubs] = useState<string>('');
   const [adminRep, setAdminRep] = useState<string>('');
+  const [adminLuck, setAdminLuck] = useState<string>('');
 
   // Gemini State
   const [aiPrompt, setAiPrompt] = useState('');
@@ -304,7 +305,6 @@ const App: React.FC = () => {
             else if (state.activeRestaurant === 'maydonoz-doner') setActiveSponsor(getMaydonozDoner_Sponsorship());
             else {
               const roll = Math.random();
-              // Total 15 restaurants (0.066 each approx)
               if (roll < 0.06) setActiveSponsor(getKFC_Sponsorship());
               else if (roll < 0.12) setActiveSponsor(getPopeyes_Sponsorship());
               else if (roll < 0.18) setActiveSponsor(getBK_Sponsorship());
@@ -510,8 +510,9 @@ const App: React.FC = () => {
       money: adminMoney !== '' ? parseInt(adminMoney) : prev.money,
       subscribers: adminSubs !== '' ? parseInt(adminSubs) : prev.subscribers,
       reputation: adminRep !== '' ? parseInt(adminRep) : prev.reputation,
+      sponsorLuck: adminLuck !== '' ? parseInt(adminLuck) : prev.sponsorLuck,
     }));
-    addNotification("Admin: Stats updated.", "success");
+    addNotification("Admin: Reality modified.", "success");
   };
 
   if (state.isGameOver) {
@@ -550,7 +551,6 @@ const App: React.FC = () => {
         />
       )}
 
-      {/* Tabs Navigation */}
       <nav className="flex justify-center flex-wrap gap-1 sm:gap-4 p-2 sm:p-4 bg-slate-900 border-b border-slate-800 shrink-0 animate-slide-down">
         {tabs.map((tab) => (
           <button 
@@ -753,26 +753,27 @@ const App: React.FC = () => {
                     <label className="text-[10px] font-bold text-slate-600 uppercase">Set Reputation</label>
                     <input type="number" value={adminRep} onChange={(e) => setAdminRep(e.target.value)} placeholder={state.reputation.toString()} className="bg-slate-800 border border-slate-700 rounded-xl px-4 py-2 text-sm text-white focus:outline-none focus:border-blue-500 transition-all" />
                   </div>
-                  <button onClick={handleAdminUpdateStats} className="w-full py-3 bg-blue-600 hover:bg-blue-500 rounded-xl font-bold uppercase text-xs tracking-widest transition-all text-white shadow-lg active-shrink">{t.updateStats}</button>
                 </div>
               </div>
 
               <div className="space-y-4">
-                <h3 className="text-xs font-black uppercase text-slate-500 tracking-widest">Features & Modes</h3>
+                <h3 className="text-xs font-black uppercase text-slate-500 tracking-widest">Luck & Progression</h3>
                 <div className="grid grid-cols-1 gap-3">
-                  <div className="bg-slate-800 p-4 rounded-xl space-y-2">
-                    <div className="flex justify-between items-center">
-                      <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest">{t.setSponsorLuck}</label>
-                      <span className="text-xs font-black text-white">{state.sponsorLuck}%</span>
+                  <div className="flex flex-col gap-1">
+                    <label className="text-[10px] font-black text-slate-600 uppercase tracking-widest">{t.setSponsorLuck}</label>
+                    <div className="flex items-center gap-2">
+                      <input 
+                        type="number" 
+                        value={adminLuck} 
+                        onChange={(e) => setAdminLuck(e.target.value)} 
+                        placeholder={state.sponsorLuck.toString()}
+                        className="flex-1 bg-slate-800 border border-slate-700 rounded-xl px-4 py-2 text-sm text-white focus:outline-none focus:border-blue-500 transition-all" 
+                      />
+                      <span className="text-sm font-black text-orange-500">x luck</span>
                     </div>
-                    <input 
-                      type="range" 
-                      min="0" 
-                      max="100" 
-                      value={state.sponsorLuck} 
-                      onChange={(e) => setState(prev => ({ ...prev, sponsorLuck: parseInt(e.target.value) }))}
-                      className="w-full h-1 bg-slate-700 rounded-lg appearance-none cursor-pointer accent-orange-500"
-                    />
+                  </div>
+                  <div className="pt-2">
+                    <button onClick={handleAdminUpdateStats} className="w-full py-3 bg-blue-600 hover:bg-blue-500 rounded-xl font-bold uppercase text-xs tracking-widest transition-all text-white shadow-lg active-shrink">{t.updateStats}</button>
                   </div>
                   <button onClick={() => setState(prev => ({ ...prev, isElonModeUnlocked: true, isBillModeUnlocked: true }))} className="py-3 bg-emerald-600/20 border border-emerald-500/50 text-emerald-500 rounded-xl font-bold uppercase text-xs hover:bg-emerald-600 hover:text-white transition-all active-shrink">{t.unlockAllModes}</button>
                   <button onClick={() => setState(prev => ({ ...prev, inventory: SHOP_ITEMS.map(i => i.id) }))} className="py-3 bg-purple-600/20 border border-purple-500/50 text-purple-500 rounded-xl font-bold uppercase text-xs hover:bg-purple-600 hover:text-white transition-all active-shrink">{t.addAllItems}</button>

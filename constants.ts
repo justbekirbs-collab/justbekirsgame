@@ -77,7 +77,7 @@ export const TRANSLATIONS = {
     resetGame: "Hard Reset State",
     activeSponsorLuck: "Active Sponsor Luck",
     deactiveSponsorLuck: "Deactive Sponsor Luck",
-    setSponsorLuck: "Sponsor Luck (%)"
+    setSponsorLuck: "Sponsor Luck (Multiplier)"
   },
   tr: {
     money: "Para",
@@ -155,7 +155,7 @@ export const TRANSLATIONS = {
     resetGame: "Tüm İlerlemeyi Sıfırla",
     activeSponsorLuck: "Sponsor Şansını Aç",
     deactiveSponsorLuck: "Sponsor Şansını Kapat",
-    setSponsorLuck: "Sponsor Şansı (%)"
+    setSponsorLuck: "Sponsor Şansı (Çarpan)"
   }
 };
 
