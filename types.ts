@@ -11,12 +11,14 @@ export interface GameState {
   inventory: string[]; // IDs of items owned
   usedCodes: string[]; // List of promo codes already redeemed
   language: Language;
-  guaranteedSponsor?: boolean; // New flag for promo code
-  activeRestaurant?: 'kfc' | 'popeyes' | 'bk' | 'wendys' | 'hd-iskender' | 'kudo-kudo' | 'dominos' | 'starbucks' | 'subway' | null;
+  guaranteedSponsor?: boolean; // Legacy flag, now replaced by sponsorLuck logic
+  sponsorLuck: number; // 0 to 100
+  activeRestaurant?: 'kfc' | 'popeyes' | 'bk' | 'wendys' | 'hd-iskender' | 'kudo-kudo' | 'dominos' | 'starbucks' | 'subway' | 'doyuyo' | 'mcdonalds' | 'bursa-kebap-evi' | 'planets-pizza' | 'little-caesars' | 'maydonoz-doner' | null;
   isElonModeUnlocked?: boolean;
   elonPurchases?: Record<string, number>;
   isBillModeUnlocked?: boolean;
   billPurchases?: Record<string, number>;
+  isAdminUnlocked?: boolean;
 }
 
 export interface LocalizedString {

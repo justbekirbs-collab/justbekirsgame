@@ -68,7 +68,16 @@ export const TRANSLATIONS = {
     remaining: "Remaining",
     spent: "Spent",
     elonDesc: "Elon just handed you his credit card. Don't worry, it's unlimited (mostly).",
-    billDesc: "Bill Gates left his wallet here. Let's see how much good we can do (or buy)."
+    billDesc: "Bill Gates left his wallet here. Let's see how much good we can do (or buy).",
+    adminTitle: "Admin Control Panel",
+    adminDesc: "God Mode: Modify your reality.",
+    updateStats: "Update Stats",
+    unlockAllModes: "Unlock All Modes",
+    addAllItems: "Add All Shop Items",
+    resetGame: "Hard Reset State",
+    activeSponsorLuck: "Active Sponsor Luck",
+    deactiveSponsorLuck: "Deactive Sponsor Luck",
+    setSponsorLuck: "Sponsor Luck (%)"
   },
   tr: {
     money: "Para",
@@ -137,7 +146,16 @@ export const TRANSLATIONS = {
     remaining: "Kalan",
     spent: "Harcanan",
     elonDesc: "Elon kredi kartını sana verdi. Merak etme, (neredeyse) sınırsız.",
-    billDesc: "Bill Gates cüzdanını burada unutmuş. Ne kadar harcayabiliriz bakalım."
+    billDesc: "Bill Gates cüzdanını burada unutmuş. Ne kadar harcayabiliriz bakalım.",
+    adminTitle: "Admin Kontrol Paneli",
+    adminDesc: "Tanrı Modu: Gerçekliğini değiştir.",
+    updateStats: "İstatistikleri Güncelle",
+    unlockAllModes: "Tüm Modları Aç",
+    addAllItems: "Add All Shop Items",
+    resetGame: "Tüm İlerlemeyi Sıfırla",
+    activeSponsorLuck: "Sponsor Şansını Aç",
+    deactiveSponsorLuck: "Sponsor Şansını Kapat",
+    setSponsorLuck: "Sponsor Şansı (%)"
   }
 };
 
@@ -176,6 +194,14 @@ export const COOKING_VIDEO_TITLES: LocalizedString[] = [
 ];
 
 export const SHOP_ITEMS: ShopItem[] = [
+  {
+    id: "yt_premium",
+    name: { en: "YouTube Premium Subscription", tr: "YouTube Premium Aboneliği" },
+    price: 150000,
+    multiplier: 5.0,
+    image: "https://upload.wikimedia.org/wikipedia/commons/thumb/d/dd/YouTube_Premium_logo.svg/1280px-YouTube_Premium_logo.svg.png",
+    description: { en: "Removes ads from your life! Massive 5.0x multiplier!", tr: "Hayatından reklamları çıkar! Devasa 5.0x çarpan!" }
+  },
   {
     id: "rtx5090",
     name: { en: "NVIDIA RTX 5090", tr: "NVIDIA RTX 5090" },
@@ -336,6 +362,60 @@ export const getSubway_Sponsorship = (): Sponsorship => ({
   description: { en: "Eat fresh! Showcase our healthy sub options.", tr: "Taze ye! Sağlıklı sandviç seçeneklerimizi tanıt." }
 });
 
+export const getDoyuyo_Sponsorship = (): Sponsorship => ({
+  id: 'doyuyo-' + Math.random().toString(36).substr(2, 5),
+  brand: "Doyuyo",
+  offer: 9500,
+  repImpact: 15,
+  isScam: false,
+  description: { en: "Crispy chicken feast! Show our unique fried buckets in your video.", tr: "Çıtır tavuk ziyafeti! Videonda eşsiz kızarmış kovalarımızı göster." }
+});
+
+export const getMcDonalds_Sponsorship = (): Sponsorship => ({
+  id: 'mcdonalds-' + Math.random().toString(36).substr(2, 5),
+  brand: "McDonald's",
+  offer: 11500,
+  repImpact: 18,
+  isScam: false,
+  description: { en: "I'm lovin' it! Show your favorite Big Mac meal.", tr: "İşte bunu seviyorum! En sevdiğin Big Mac menüsünü göster." }
+});
+
+export const getBursaKebapEvi_Sponsorship = (): Sponsorship => ({
+  id: 'bursa-kebap-evi-' + Math.random().toString(36).substr(2, 5),
+  brand: "Bursa Kebap Evi",
+  offer: 13500,
+  repImpact: 25,
+  isScam: false,
+  description: { en: "The king of kebab! Promote our legendary Iskender and traditional flavors.", tr: "Kebabın kralı! Efsanevi İskender'imizi ve geleneksel lezzetlerimizi tanıt." }
+});
+
+export const getPlanetsPizza_Sponsorship = (): Sponsorship => ({
+  id: 'planets-pizza-' + Math.random().toString(36).substr(2, 5),
+  brand: "Planets Pizza",
+  offer: 12500,
+  repImpact: 19,
+  isScam: false,
+  description: { en: "Out of this world pizza! Show your favorite pizza combo from Planets.", tr: "Dünya dışı lezzet! Planets'ten en sevdiğin pizza menüsünü göster." }
+});
+
+export const getLittleCaesars_Sponsorship = (): Sponsorship => ({
+  id: 'little-caesars-' + Math.random().toString(36).substr(2, 5),
+  brand: "Little Caesars",
+  offer: 11000,
+  repImpact: 16,
+  isScam: false,
+  description: { en: "Pizza! Pizza! Promote our hot-n-ready deal.", tr: "Pizza! Pizza! Sıcak-ve-hazır teklifimizi tanıt." }
+});
+
+export const getMaydonozDoner_Sponsorship = (): Sponsorship => ({
+  id: 'maydonoz-doner-' + Math.random().toString(36).substr(2, 5),
+  brand: "Maydonoz Döner",
+  offer: 10500,
+  repImpact: 17,
+  isScam: false,
+  description: { en: "The unique herbal taste! Showcase our signature wrap.", tr: "Eşsiz otlu lezzet! İmza dürümümüzü tanıt." }
+});
+
 export const getYouTubePremium_Sponsorship = (): Sponsorship => ({
   id: 'yt-premium-' + Math.random().toString(36).substr(2, 5),
   brand: "YouTube Premium",
@@ -374,6 +454,48 @@ export const getRandomSponsorship = (isScam: boolean): Sponsorship => {
 };
 
 export const RESTAURANTS = [
+  {
+    id: 'planets-pizza',
+    name: "Planets Pizza",
+    logo: 'https://images.squarespace-cdn.com/content/67caec292d79965e1f03863b/f8e95834-0f9a-430c-865f-b5c30091ebb2/hd-logo.png?format=1000w&content-type=image%2Fpng',
+    price: 1350,
+    desc: { en: "Cosmic pizza experience! Increases Planets Pizza sponsorship probability.", tr: "Kozmik pizza deneyimi! Planets Pizza sponsorluk ihtimalini arttırır." }
+  },
+  {
+    id: 'little-caesars',
+    name: "Little Caesars",
+    logo: 'https://images.deliveryhero.io/image/fd-tr/tr-logos/cs2tr-logo.jpg',
+    price: 1150,
+    desc: { en: "Pizza! Pizza! Increases Little Caesars sponsorship probability.", tr: "Pizza! Pizza! Little Caesars sponsorluk ihtimalini arttırır." }
+  },
+  {
+    id: 'maydonoz-doner',
+    name: "Maydonoz Döner",
+    logo: 'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRjMJBDAUmz4K-Z63H0Dq-TsgNbXYYsHaJBuA&s',
+    price: 1100,
+    desc: { en: "Legendary herbal flavors! Increases Maydonoz Döner sponsorship probability.", tr: "Efsanevi otlu lezzetler! Maydonoz Döner sponsorluk ihtimalini arttırır." }
+  },
+  {
+    id: 'bursa-kebap-evi',
+    name: "Bursa Kebap Evi",
+    logo: 'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTk_jC7JIEA2X8z-4p4Z2lxEJNqHpTjjeQ2tw&s',
+    price: 1600,
+    desc: { en: "Premium traditional taste! Increases Bursa Kebap Evi sponsorship probability.", tr: "Birinci sınıf geleneksel lezzet! Bursa Kebap Evi sponsorluk ihtimalini arttırır." }
+  },
+  {
+    id: 'mcdonalds',
+    name: "McDonald's",
+    logo: 'https://upload.wikimedia.org/wikipedia/commons/thumb/3/36/McDonald%27s_Golden_Arches.svg/1200px-McDonald%27s_Golden_Arches.svg.png',
+    price: 950,
+    desc: { en: "The global icon! Increases McDonald's sponsorship probability.", tr: "Dünya ikonu! McDonald's sponsorluk ihtimalini arttırır." }
+  },
+  {
+    id: 'doyuyo',
+    name: 'Doyuyo',
+    logo: 'https://www.mallofantalya.com.tr/content/upload/images/large/2025/08/doyuyo_logo.jpg',
+    price: 1250,
+    desc: { en: 'Crispy chicken and unique flavors! Eating here increases Doyuyo sponsorship probability.', tr: 'Çıtır tavuklar ve eşsiz lezzetler! Burada yemek yemek Doyuyo sponsorluk ihtimalini arttırır.' }
+  },
   {
     id: 'kfc',
     name: 'KFC',
