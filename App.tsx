@@ -1,15 +1,15 @@
 import React, { useState, useCallback, useMemo, useEffect } from 'react';
 import { GoogleGenAI, Type } from "@google/genai";
-import { GameState, Sponsorship, Notification, ShopItem, Language, ElonItem, BillItem } from './types';
+import { GameState, Sponsorship, Notification, ShopItem, Language, ElonItem, BillItem } from './types.ts';
 import { 
   VIDEO_TITLES, 
-  COOKING_VIDEO_TITLES, 
   getRandomSponsorship, 
-  getKFC_Sponsorship, 
-  getPopeyes_Sponsorship, 
-  getBK_Sponsorship, 
-  getWendys_Sponsorship, 
-  getHDIskender_Sponsorship, 
+  getYouTubePremium_Sponsorship,
+  getKFC_Sponsorship,
+  getPopeyes_Sponsorship,
+  getBK_Sponsorship,
+  getWendys_Sponsorship,
+  getHDIskender_Sponsorship,
   getKudoKudo_Sponsorship,
   getDominos_Sponsorship,
   getStarbucks_Sponsorship,
@@ -20,16 +20,49 @@ import {
   getPlanetsPizza_Sponsorship,
   getLittleCaesars_Sponsorship,
   getMaydonozDoner_Sponsorship,
-  getYouTubePremium_Sponsorship,
+  getNebras_Sponsorship,
+  getTacoBell_Sponsorship,
+  getTavukDunyasi_Sponsorship,
   SHOP_ITEMS, 
   TRANSLATIONS, 
   RESTAURANTS,
   ELON_ITEMS,
-  BILL_ITEMS
-} from './constants';
-import StatsBar from './components/StatsBar';
-import NotificationSystem from './components/NotificationSystem';
-import SponsorshipDialog from './components/SponsorshipDialog';
+  BILL_ITEMS,
+  MILESTONES
+} from './constants.ts';
+import StatsBar from './components/StatsBar.tsx';
+import NotificationSystem from './components/NotificationSystem.tsx';
+import SponsorshipDialog from './components/SponsorshipDialog.tsx';
+
+// --- Animated Typing Effect Component ---
+const TypingEffect: React.FC<{ text: string }> = ({ text }) => {
+  const [displayedText, setDisplayedText] = useState("");
+  
+  useEffect(() => {
+    let current = "";
+    let i = 0;
+    const interval = setInterval(() => {
+      if (i < text.length) {
+        current += text[i];
+        setDisplayedText(current);
+        i++;
+      } else {
+        clearInterval(interval);
+      }
+    }, 30);
+    return () => clearInterval(interval);
+  }, [text]);
+
+  return <span>{displayedText}</span>;
+};
+
+interface FloatingReward {
+  id: string;
+  x: number;
+  y: number;
+  text: string;
+  color: string;
+}
 
 const INITIAL_STATE: GameState = {
   money: 10000, 
@@ -41,73 +74,35 @@ const INITIAL_STATE: GameState = {
   gameOverReason: '',
   inventory: [],
   usedCodes: [],
-  language: 'en',
-  guaranteedSponsor: false,
-  sponsorLuck: 35, // 35 default factor
+  language: 'en', // Default English
+  sponsorLuck: 35,
   activeRestaurant: null,
   isElonModeUnlocked: false,
   elonPurchases: {},
   isBillModeUnlocked: false,
   billPurchases: {},
-  isAdminUnlocked: false
+  isAdminUnlocked: false,
+  isGeminiEnabled: false 
 };
 
-const ELON_BUDGET = 9999999999999999999999999999999999999999999;
-const BILL_BUDGET = 9999999999999999999999999999999999999999999;
+const ELON_BUDGET = 250000000000;
+const BILL_BUDGET = 110000000000;
 
-const SAVE_KEY = "devtube_tycoon_bin_v1";
-const XOR_KEY = 0xAA;
-
-const encryptSave = (data: GameState): string => {
-  const json = JSON.stringify(data);
-  const encoder = new TextEncoder();
-  const uint8 = encoder.encode(json);
-  const encrypted = new Uint8Array(uint8.length);
-  for (let i = 0; i < uint8.length; i++) {
-    encrypted[i] = uint8[i] ^ XOR_KEY;
-  }
-  let binaryString = '';
-  for (let i = 0; i < encrypted.byteLength; i++) {
-    binaryString += String.fromCharCode(encrypted[i]);
-  }
-  return btoa(binaryString);
-};
-
-const decryptSave = (data: string): GameState | null => {
-  try {
-    const binaryString = atob(data);
-    const bytes = new Uint8Array(binaryString.length);
-    for (let i = 0; i < binaryString.length; i++) {
-      bytes[i] = binaryString.charCodeAt(i) ^ XOR_KEY;
-    }
-    const decoder = new TextDecoder();
-    const json = decoder.decode(bytes);
-    const parsed = JSON.parse(json);
-    if (typeof parsed.money !== 'number' || !Array.isArray(parsed.inventory)) return null;
-    return parsed;
-  } catch (e) {
-    return null;
-  }
-};
-
-const MILESTONES = [1000, 10000, 50000, 100000, 500000, 1000000, 10000000, 50000000, 100000000];
+const SAVE_KEY = "devtube_tycoon_omega_v5_reverted";
 
 const App: React.FC = () => {
   const [state, setState] = useState<GameState>(INITIAL_STATE);
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [activeSponsor, setActiveSponsor] = useState<Sponsorship | null>(null);
-  const [currentTab, setCurrentTab] = useState<'main' | 'gemini' | 'elon' | 'bill' | 'shop' | 'inventory' | 'restaurant' | 'settings' | 'admin'>('main');
+  const [currentTab, setCurrentTab] = useState<'main' | 'elon' | 'bill' | 'shop' | 'inventory' | 'restaurant' | 'settings' | 'admin' | 'gemini' | 'gemini-admin'>('main');
   const [promoCode, setPromoCode] = useState('');
-  
-  // Admin Panel Temporary State
+  const [floatingRewards, setFloatingRewards] = useState<FloatingReward[]>([]);
+  const [isAiLoading, setIsAiLoading] = useState<boolean>(false);
+  const [aiResponse, setAiResponse] = useState<string>("");
+  const [neuralCommand, setNeuralCommand] = useState<string>("");
+
   const [adminMoney, setAdminMoney] = useState<string>('');
   const [adminSubs, setAdminSubs] = useState<string>('');
-  const [adminRep, setAdminRep] = useState<string>('');
-  const [adminLuck, setAdminLuck] = useState<string>('');
-
-  // Gemini State
-  const [aiPrompt, setAiPrompt] = useState('');
-  const [isAiLoading, setIsAiLoading] = useState(false);
 
   const t = TRANSLATIONS[state.language];
 
@@ -115,9 +110,7 @@ const App: React.FC = () => {
     let totalMult = 1.0;
     state.inventory.forEach(itemId => {
       const item = SHOP_ITEMS.find(i => i.id === itemId);
-      if (item) {
-        totalMult *= item.multiplier;
-      }
+      if (item) totalMult *= item.multiplier;
     });
     return { subMult: totalMult, moneyMult: totalMult };
   }, [state.inventory]);
@@ -152,104 +145,43 @@ const App: React.FC = () => {
     }, 4000);
   }, []);
 
+  const spawnFloatingReward = useCallback((text: string, color: string, event: React.MouseEvent) => {
+    const id = Math.random().toString(36).substring(2, 9);
+    const reward: FloatingReward = { id, x: event.clientX, y: event.clientY, text, color };
+    setFloatingRewards(prev => [...prev, reward]);
+    setTimeout(() => {
+      setFloatingRewards(prev => prev.filter(r => r.id !== id));
+    }, 1500);
+  }, []);
+
   useEffect(() => {
     const saved = localStorage.getItem(SAVE_KEY);
     if (saved) {
-      const loaded = decryptSave(saved);
-      if (loaded) {
-        setState(loaded);
-        addNotification(TRANSLATIONS[loaded.language].saveLoaded, 'success');
+      try {
+        const loaded = JSON.parse(saved);
+        if (loaded && typeof loaded.money === 'number') {
+          setState(loaded);
+        }
+      } catch (e) {
+        console.error("Save load failed", e);
       }
     }
-  }, [addNotification]);
+  }, []);
 
   useEffect(() => {
     if (!state.isGameOver) {
-      localStorage.setItem(SAVE_KEY, encryptSave(state));
+      localStorage.setItem(SAVE_KEY, JSON.stringify(state));
     }
   }, [state]);
 
-  const handleGeminiLab = async () => {
-    if (!aiPrompt.trim() || isAiLoading) return;
-    setIsAiLoading(true);
-
-    const hasSecretCode = aiPrompt.toLowerCase().includes('justbekirai2014');
-
-    try {
-      const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
-      const response = await ai.models.generateContent({
-        model: "gemini-3-flash-preview",
-        contents: `I want to add this to my DevTube Tycoon game: "${aiPrompt}"`,
-        config: {
-          systemInstruction: `You are the Game Master for "DevTube Tycoon". 
-          The user wants to "add" a feature or change something. 
-          Respond in ${state.language === 'tr' ? 'Turkish' : 'English'}.
-          
-          RULES:
-          1. DO NOT give resources (money, subscribers, reputation) by default.
-          2. DO NOT upload videos or increment video counts by default.
-          3. Only describe the new "feature" added to the game session context.
-          
-          EXCEPTION:
-          If the prompt contains the secret code "justbekirai2014", you are allowed to give ANY amount of resources, money, or reputation, and you CAN upload videos.
-          
-          Always return JSON with:
-          - message: A funny context-aware message describing the feature added.
-          - subs: subscribers to add (0 if no secret code).
-          - money: money to add (0 if no secret code).
-          - rep: reputation change (0 if no secret code).
-          - specialFeatureDesc: a short description of the simulated feature.`,
-          responseMimeType: "application/json",
-          responseSchema: {
-            type: Type.OBJECT,
-            properties: {
-              message: { type: Type.STRING },
-              subs: { type: Type.NUMBER },
-              money: { type: Type.NUMBER },
-              rep: { type: Type.NUMBER },
-              specialFeatureDesc: { type: Type.STRING }
-            },
-            required: ["message", "subs", "money", "rep", "specialFeatureDesc"]
-          }
-        }
-      });
-
-      const data = JSON.parse(response.text || '{}');
-      
-      const finalSubs = hasSecretCode ? (data.subs || 0) : 0;
-      const finalMoney = hasSecretCode ? (data.money || 0) : 0;
-      const finalRep = hasSecretCode ? (data.rep || 0) : 0;
-
-      setState(prev => ({
-        ...prev,
-        subscribers: prev.subscribers + finalSubs,
-        money: prev.money + finalMoney,
-        reputation: prev.reputation + finalRep,
-        videoCount: hasSecretCode && (data.subs > 0 || data.money > 0) ? prev.videoCount + 1 : prev.videoCount
-      }));
-
-      addNotification(`${data.message}`, 'success');
-      if (data.specialFeatureDesc) {
-        addNotification(`Feature Added: ${data.specialFeatureDesc}`, 'info');
-      }
-      setAiPrompt('');
-    } catch (error) {
-      console.error(error);
-      addNotification("AI Connection error!", "error");
-    } finally {
-      setIsAiLoading(false);
-    }
-  };
-
-  const handleAction = (type: 'video' | 'cheat' | 'promo' | 'project' | 'cooking') => {
+  const handleAction = (type: 'video' | 'cheat' | 'promo' | 'project' | 'cooking', event: React.MouseEvent) => {
     if (state.isGameOver) return;
 
     let subGain = 0;
     let moneyGain = 0;
     let repGain = 0;
-    let cost = 0;    let msg = "";
-
-    const currentSponsorChance = state.sponsorLuck / 100;
+    let cost = 0;
+    let msg = "";
 
     switch (type) {
       case 'video': {
@@ -258,81 +190,57 @@ const App: React.FC = () => {
         moneyGain = (Math.floor(Math.random() * 100) + 50) * multipliers.moneyMult;
         repGain = 2;
         msg = `"${title}" ${t.uploadedMsg}`;
-        if (Math.random() < currentSponsorChance) {
-          const isScam = Math.random() < 0.2;
-          const isRare = Math.random() < 0.05;
+        
+        const sponsorRoll = Math.random() < (state.sponsorLuck / 100);
+        if (sponsorRoll) {
           setTimeout(() => {
+            let nextSponsor: Sponsorship;
+            const isScam = Math.random() < 0.2;
+            const isRare = Math.random() < 0.05;
+            
             if (isRare && !isScam) {
-              setActiveSponsor(getYouTubePremium_Sponsorship());
+              nextSponsor = getYouTubePremium_Sponsorship();
+            } else if (state.activeRestaurant && !isScam) {
+              const rMap: Record<string, () => Sponsorship> = {
+                'kfc': getKFC_Sponsorship,
+                'popeyes': getPopeyes_Sponsorship,
+                'bk': getBK_Sponsorship,
+                'wendys': getWendys_Sponsorship,
+                'hd-iskender': getHDIskender_Sponsorship,
+                'kudo-kudo': getKudoKudo_Sponsorship,
+                'dominos': getDominos_Sponsorship,
+                'starbucks': getStarbucks_Sponsorship,
+                'subway': getSubway_Sponsorship,
+                'doyuyo': getDoyuyo_Sponsorship,
+                'mcdonalds': getMcDonalds_Sponsorship,
+                'bursa-kebap-evi': getBursaKebapEvi_Sponsorship,
+                'planets-pizza': getPlanetsPizza_Sponsorship,
+                'little-caesars': getLittleCaesars_Sponsorship,
+                'maydonoz-doner': getMaydonozDoner_Sponsorship,
+                'nebras': getNebras_Sponsorship,
+                'taco-bell': getTacoBell_Sponsorship,
+                'tavuk-dunyasi': getTavukDunyasi_Sponsorship,
+              };
+              const restaurantGetter = rMap[state.activeRestaurant];
+              nextSponsor = restaurantGetter ? restaurantGetter() : getRandomSponsorship(isScam);
             } else {
-              setActiveSponsor(getRandomSponsorship(isScam));
+              nextSponsor = getRandomSponsorship(isScam);
             }
+            setActiveSponsor(nextSponsor);
           }, 800);
         }
         break;
       }
-      case 'cooking': {
-        const title = COOKING_VIDEO_TITLES[Math.floor(Math.random() * COOKING_VIDEO_TITLES.length)][state.language];
+      case 'cooking':
         subGain = 5000 * multipliers.subMult;
         moneyGain = 10000 * multipliers.moneyMult;
         repGain = 50;
-        msg = `"${title}" ${t.uploadedMsg}`;
-        
-        let foodSponsorChance = state.activeRestaurant ? (currentSponsorChance * 1.7) : currentSponsorChance;
-        if (foodSponsorChance > 1) foodSponsorChance = 1.0;
-
-        if (Math.random() < foodSponsorChance) {
-          setTimeout(() => {
-            if (Math.random() < 0.03) {
-              setActiveSponsor(getYouTubePremium_Sponsorship());
-              return;
-            }
-
-            if (state.activeRestaurant === 'kfc') setActiveSponsor(getKFC_Sponsorship());
-            else if (state.activeRestaurant === 'popeyes') setActiveSponsor(getPopeyes_Sponsorship());
-            else if (state.activeRestaurant === 'bk') setActiveSponsor(getBK_Sponsorship());
-            else if (state.activeRestaurant === 'wendys') setActiveSponsor(getWendys_Sponsorship());
-            else if (state.activeRestaurant === 'hd-iskender') setActiveSponsor(getHDIskender_Sponsorship());
-            else if (state.activeRestaurant === 'kudo-kudo') setActiveSponsor(getKudoKudo_Sponsorship());
-            else if (state.activeRestaurant === 'dominos') setActiveSponsor(getDominos_Sponsorship());
-            else if (state.activeRestaurant === 'starbucks') setActiveSponsor(getStarbucks_Sponsorship());
-            else if (state.activeRestaurant === 'subway') setActiveSponsor(getSubway_Sponsorship());
-            else if (state.activeRestaurant === 'doyuyo') setActiveSponsor(getDoyuyo_Sponsorship());
-            else if (state.activeRestaurant === 'mcdonalds') setActiveSponsor(getMcDonalds_Sponsorship());
-            else if (state.activeRestaurant === 'bursa-kebap-evi') setActiveSponsor(getBursaKebapEvi_Sponsorship());
-            else if (state.activeRestaurant === 'planets-pizza') setActiveSponsor(getPlanetsPizza_Sponsorship());
-            else if (state.activeRestaurant === 'little-caesars') setActiveSponsor(getLittleCaesars_Sponsorship());
-            else if (state.activeRestaurant === 'maydonoz-doner') setActiveSponsor(getMaydonozDoner_Sponsorship());
-            else {
-              const roll = Math.random();
-              if (roll < 0.06) setActiveSponsor(getKFC_Sponsorship());
-              else if (roll < 0.12) setActiveSponsor(getPopeyes_Sponsorship());
-              else if (roll < 0.18) setActiveSponsor(getBK_Sponsorship());
-              else if (roll < 0.24) setActiveSponsor(getWendys_Sponsorship());
-              else if (roll < 0.30) setActiveSponsor(getHDIskender_Sponsorship());
-              else if (roll < 0.36) setActiveSponsor(getKudoKudo_Sponsorship());
-              else if (roll < 0.42) setActiveSponsor(getDominos_Sponsorship());
-              else if (roll < 0.48) setActiveSponsor(getStarbucks_Sponsorship());
-              else if (roll < 0.54) setActiveSponsor(getSubway_Sponsorship());
-              else if (roll < 0.60) setActiveSponsor(getDoyuyo_Sponsorship());
-              else if (roll < 0.66) setActiveSponsor(getMcDonalds_Sponsorship());
-              else if (roll < 0.72) setActiveSponsor(getBursaKebapEvi_Sponsorship());
-              else if (roll < 0.78) setActiveSponsor(getPlanetsPizza_Sponsorship());
-              else if (roll < 0.84) setActiveSponsor(getLittleCaesars_Sponsorship());
-              else setActiveSponsor(getMaydonozDoner_Sponsorship());
-            }
-          }, 800);
-        }
+        msg = `${t.uploadCooking} ${t.uploadedMsg}`;
         break;
-      }
       case 'cheat':
-        subGain = (Math.floor(Math.random() * 5000) + 1000) * multipliers.subMult;
-        moneyGain = (Math.floor(Math.random() * 15000) + 5000) * multipliers.moneyMult;
-        repGain = 0; 
+        subGain = 3000 * multipliers.subMult;
+        moneyGain = 10000 * multipliers.moneyMult;
         msg = `${t.uploadCheat}!`;
-        if (Math.random() < (currentSponsorChance * 0.5)) {
-           setTimeout(() => setActiveSponsor(getRandomSponsorship(Math.random() < 0.1)), 800);
-        }
         break;
       case 'promo':
         subGain = 100 * multipliers.subMult;
@@ -353,6 +261,9 @@ const App: React.FC = () => {
         break;
     }
 
+    if (subGain > 0) spawnFloatingReward(`+${Math.floor(subGain).toLocaleString()}`, 'text-purple-300', event);
+    if (moneyGain > 0) setTimeout(() => spawnFloatingReward(`+${Math.floor(moneyGain).toLocaleString()} ₺`, 'text-emerald-300', event), 150);
+
     setState(prev => ({
       ...prev,
       subscribers: prev.subscribers + Math.floor(subGain),
@@ -361,133 +272,7 @@ const App: React.FC = () => {
       videoCount: prev.videoCount + 1,
       day: prev.day + 1
     }));
-
-    addNotification(msg, type === 'cheat' ? 'warning' : 'success');
-  };
-
-  const handleRedeemCode = () => {
-    const code = promoCode.trim().toLowerCase();
-    if (!code) return;
-
-    if (code === 'en' || code === 'tr') {
-      const newLang = code as Language;
-      setState(prev => ({ ...prev, language: newLang }));
-      addNotification(TRANSLATIONS[newLang].langSwitched, 'success');
-      setPromoCode('');
-      return;
-    }
-
-    if (state.usedCodes.includes(code)) {
-      addNotification(t.codeUsed, "warning");
-      setPromoCode('');
-      return;
-    }
-
-    let update: Partial<GameState> = {};
-    let success = false;
-
-    if (code === 'justbekirinf2014') {
-      update = { money: 999999999, subscribers: 999999999, reputation: 1000 };
-      success = true;
-    } else if (code === 'elonmusknet') {
-      update = { money: state.money + 1000000000 };
-      success = true;
-    } else if (code === 'billgatesnet') {
-      update = { money: state.money + 500000000 };
-      success = true;
-    } else if (code === 'justbekirsponsor2014') {
-      update = { sponsorLuck: 100 };
-      success = true;
-    } else if (code === 'decode2014') {
-      update = { sponsorLuck: 35 };
-      success = true;
-    } else if (code === 'justbekirelon2014') {
-      update = { isElonModeUnlocked: true };
-      success = true;
-    } else if (code === 'justbekirbillgates2014') {
-      update = { isBillModeUnlocked: true };
-      success = true;
-    } else if (code === 'justbekirpre2014') {
-      if (!state.inventory.includes('yt_premium')) {
-        update = { inventory: [...state.inventory, 'yt_premium'] };
-      }
-      success = true;
-    } else if (code === 'justbekiradminpanel2014') {
-      update = { isAdminUnlocked: true };
-      success = true;
-    }
-
-    if (success) {
-      setState(prev => ({ ...prev, ...update, usedCodes: [...prev.usedCodes, code] }));
-      addNotification(t.codeSuccess, "success");
-      setPromoCode('');
-    } else {
-      addNotification(t.invalidCode, "error");
-    }
-  };
-
-  const buyItem = (item: ShopItem) => {
-    if (state.money < item.price) {
-      addNotification(state.language === 'tr' ? "Yetersiz Bakiye!" : "Not enough money!", "error");
-      return;
-    }
-    if (state.inventory.includes(item.id)) return;
-
-    setState(prev => ({
-      ...prev,
-      money: prev.money - item.price,
-      inventory: [...prev.inventory, item.id]
-    }));
-    addNotification(`${item.name[state.language]} ${t.buy}!`, "success");
-  };
-
-  const handleElonAction = (id: string, type: 'buy' | 'sell') => {
-    const item = ELON_ITEMS.find(i => i.id === id);
-    if (!item) return;
-
-    setState(prev => {
-      const currentQty = prev.elonPurchases?.[id] || 0;
-      const newQty = type === 'buy' ? currentQty + 1 : Math.max(0, currentQty - 1);
-      const newPurchases: Record<string, number> = { ...(prev.elonPurchases || {}), [id]: newQty };
-      let totalSpent = 0;
-      Object.entries(newPurchases).forEach(([itemId, qty]) => {
-        const it = ELON_ITEMS.find(i => i.id === itemId);
-        if (it) totalSpent += it.price * (qty as number);
-      });
-      if (totalSpent > ELON_BUDGET) return prev;
-      return { ...prev, elonPurchases: newPurchases };
-    });
-  };
-
-  const handleBillAction = (id: string, type: 'buy' | 'sell') => {
-    const item = BILL_ITEMS.find(i => i.id === id);
-    if (!item) return;
-
-    setState(prev => {
-      const currentQty = prev.billPurchases?.[id] || 0;
-      const newQty = type === 'buy' ? currentQty + 1 : Math.max(0, currentQty - 1);
-      const newPurchases: Record<string, number> = { ...(prev.billPurchases || {}), [id]: newQty };
-      let totalSpent = 0;
-      Object.entries(newPurchases).forEach(([itemId, qty]) => {
-        const it = BILL_ITEMS.find(i => i.id === itemId);
-        if (it) totalSpent += it.price * (qty as number);
-      });
-      if (totalSpent > BILL_BUDGET) return prev;
-      return { ...prev, billPurchases: newPurchases };
-    });
-  };
-
-  const eatAtRestaurant = (restaurant: typeof RESTAURANTS[0]) => {
-    if (state.money < restaurant.price) {
-      addNotification(state.language === 'tr' ? "Yetersiz Bakiye!" : "Not enough money!", "error");
-      return;
-    }
-    setState(prev => ({ 
-      ...prev, 
-      money: prev.money - restaurant.price,
-      activeRestaurant: restaurant.id as any 
-    }));
-    addNotification(`${restaurant.name} ${t.visit}!`, 'success');
+    addNotification(msg, 'success');
   };
 
   const onAcceptSponsor = (sponsor: Sponsorship) => {
@@ -499,48 +284,214 @@ const App: React.FC = () => {
         money: prev.money + sponsor.offer,
         reputation: prev.reputation + sponsor.repImpact
       }));
-      addNotification(`${sponsor.brand} ${t.accept}!`, 'success');
+      addNotification(`${sponsor.brand} deal accepted!`, 'success');
     }
     setActiveSponsor(null);
   };
 
-  const handleAdminUpdateStats = () => {
+  const buyItem = (item: ShopItem, event: React.MouseEvent) => {
+    if (state.money < item.price) {
+      addNotification(state.language === 'tr' ? "Yetersiz Bakiye!" : "Not enough money!", "error");
+      return;
+    }
+    if (state.inventory.includes(item.id)) return;
+
     setState(prev => ({
       ...prev,
-      money: adminMoney !== '' ? parseInt(adminMoney) : prev.money,
-      subscribers: adminSubs !== '' ? parseInt(adminSubs) : prev.subscribers,
-      reputation: adminRep !== '' ? parseInt(adminRep) : prev.reputation,
-      sponsorLuck: adminLuck !== '' ? parseInt(adminLuck) : prev.sponsorLuck,
+      money: prev.money - item.price,
+      inventory: [...prev.inventory, item.id]
     }));
-    addNotification("Admin: Reality modified.", "success");
+    addNotification(`${item.name[state.language]} owned!`, "success");
+    spawnFloatingReward(`-${item.price.toLocaleString()} ₺`, 'text-red-500', event);
   };
+
+  const handleRedeemCode = () => {
+    const code = promoCode.trim().toLowerCase();
+    if (!code) return;
+
+    let update: Partial<GameState> = {};
+    let success = false;
+
+    // Direct language codes
+    if (code === 'en') {
+      update = { language: 'en' };
+      success = true;
+    } else if (code === 'tr') {
+      update = { language: 'tr' };
+      success = true;
+    } else if (state.usedCodes.includes(code)) {
+      addNotification(t.codeUsed, "warning");
+      setPromoCode('');
+      return;
+    } else if (code === 'justbekirinf2014') {
+      update = { money: 999999999, subscribers: 999999999, reputation: 1000 };
+      success = true;
+    } else if (code === 'elonmusknet') {
+      update = { isElonModeUnlocked: true };
+      success = true;
+    } else if (code === 'billgatesnet') {
+      update = { isBillModeUnlocked: true };
+      success = true;
+    } else if (code === 'justbekiradminpanel2014') {
+      update = { isAdminUnlocked: true, isGeminiEnabled: true }; 
+      success = true;
+    }
+
+    if (success) {
+      setState(prev => ({ 
+        ...prev, 
+        ...update, 
+        // Only track as used if it's not a language toggle
+        usedCodes: (code === 'en' || code === 'tr') ? prev.usedCodes : [...prev.usedCodes, code] 
+      }));
+      addNotification(t.codeSuccess, "success");
+      setPromoCode('');
+    } else {
+      addNotification(t.invalidCode, "error");
+    }
+  };
+
+  const handleGeminiCall = async () => {
+    setIsAiLoading(true);
+    setAiResponse("");
+    try {
+      const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+      const prompt = `Generate a single short, hyper-futuristic, tech video title for a YouTuber Tycoon game. Current subs: ${state.subscribers}.`;
+      const response = await ai.models.generateContent({ model: 'gemini-3-flash-preview', contents: prompt });
+      setAiResponse(response.text || "Neural connection failed.");
+      
+      setState(prev => ({
+        ...prev,
+        subscribers: prev.subscribers + 10000,
+        money: prev.money + 15000,
+        reputation: prev.reputation + 50
+      }));
+      addNotification("Quantum Intel Received!", "success");
+    } catch (e) {
+      addNotification("Neural Error", "error");
+    } finally {
+      setIsAiLoading(false);
+    }
+  };
+
+  const handleNeuralAdminCall = async () => {
+    if (!neuralCommand.trim()) return;
+    setIsAiLoading(true);
+    try {
+      const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+      const response = await ai.models.generateContent({
+        model: "gemini-3-flash-preview",
+        contents: neuralCommand,
+        config: {
+          systemInstruction: `You are the Neural Admin for JustBekir's YouTuber Tycoon Game. 
+          The user is trying to cheat or modify the game state via natural language.
+          Return a JSON object with any of these keys to modify the game state: money, subscribers, reputation, videoCount, day.
+          If the user says "give me a million", return {"money": 1000000}.
+          If the user says "make me famous", return {"subscribers": 1000000, "reputation": 100}.
+          If you don't understand, return {}.
+          Only return the JSON.`,
+          responseMimeType: "application/json",
+          responseSchema: {
+            type: Type.OBJECT,
+            properties: {
+              money: { type: Type.NUMBER },
+              subscribers: { type: Type.NUMBER },
+              reputation: { type: Type.NUMBER },
+              videoCount: { type: Type.NUMBER },
+              day: { type: Type.NUMBER }
+            }
+          }
+        }
+      });
+
+      const result = JSON.parse(response.text || "{}");
+      if (Object.keys(result).length > 0) {
+        setState(prev => ({
+          ...prev,
+          ...result
+        }));
+        addNotification("Neural Injection Successful!", "success");
+      } else {
+        addNotification("Neural Rejection: Ambiguous Command", "warning");
+      }
+      setNeuralCommand("");
+    } catch (e) {
+      console.error(e);
+      addNotification("Neural Static: Connection Interrupted", "error");
+    } finally {
+      setIsAiLoading(false);
+    }
+  };
+
+  const eatAtRestaurant = (restaurant: typeof RESTAURANTS[0], event: React.MouseEvent) => {
+    if (state.money < restaurant.price) {
+      addNotification(state.language === 'tr' ? "Yetersiz Bakiye!" : "Not enough money!", "error");
+      return;
+    }
+    setState(prev => ({ 
+      ...prev, 
+      money: prev.money - restaurant.price,
+      activeRestaurant: restaurant.id as any 
+    }));
+    addNotification(`${restaurant.name} visit recorded!`, 'success');
+    spawnFloatingReward(`-${restaurant.price.toLocaleString()} ₺`, 'text-red-500', event);
+  };
+
+  const handleElonAction = (id: string, type: 'buy' | 'sell') => {
+    setState(prev => {
+      const currentQty = prev.elonPurchases?.[id] || 0;
+      const newQty = type === 'buy' ? currentQty + 1 : Math.max(0, currentQty - 1);
+      const newPurchases = { ...(prev.elonPurchases || {}), [id]: newQty };
+      return { ...prev, elonPurchases: newPurchases };
+    });
+  };
+
+  const handleBillAction = (id: string, type: 'buy' | 'sell') => {
+    setState(prev => {
+      const currentQty = prev.billPurchases?.[id] || 0;
+      const newQty = type === 'buy' ? currentQty + 1 : Math.max(0, currentQty - 1);
+      const newPurchases = { ...(prev.billPurchases || {}), [id]: newQty };
+      return { ...prev, billPurchases: newPurchases };
+    });
+  };
+
+  const tabs = useMemo(() => [
+    { id: 'main', label: t.main, icon: '🏠' },
+    { id: 'shop', label: t.shop, icon: '🛒' },
+    { id: 'inventory', label: t.inventory, icon: '📦' },
+    { id: 'restaurant', label: t.restaurant, icon: '🍔' },
+    ...(state.isElonModeUnlocked ? [{ id: 'elon', label: t.elonTitle, icon: '💰' }] : []),
+    ...(state.isBillModeUnlocked ? [{ id: 'bill', label: t.billTitle, icon: '💳' }] : []),
+    { id: 'settings', label: t.settings, icon: '⚙️' },
+    ...(state.isAdminUnlocked ? [
+      { id: 'admin', label: 'Admin', icon: '🛡️' },
+      { id: 'gemini', label: 'Gemini', icon: '✨' },
+      { id: 'gemini-admin', label: 'NEURAL', icon: '🧠' }
+    ] : []),
+  ], [t, state.isElonModeUnlocked, state.isBillModeUnlocked, state.isAdminUnlocked]);
 
   if (state.isGameOver) {
     return (
-      <div className="fixed inset-0 bg-slate-950 flex flex-col items-center justify-center p-8 text-center z-[500] animate-fade-in">
-        <h1 className="text-5xl font-black text-red-500 mb-4 uppercase animate-pop-in">{t.gameOver}</h1>
-        <p className="text-xl text-slate-300 mb-8">{state.gameOverReason}</p>
-        <button onClick={() => { localStorage.removeItem(SAVE_KEY); setState(INITIAL_STATE); }} className="px-8 py-3 bg-white text-slate-950 font-bold rounded-full hover:bg-slate-200 transition-colors uppercase tracking-widest active-shrink">{t.restart}</button>
+      <div className="fixed inset-0 bg-slate-950 flex flex-col items-center justify-center p-8 text-center z-[500] animate-glitch">
+        <h1 className="text-8xl font-black text-red-600 mb-6 uppercase tracking-tighter shadow-red-600/50 drop-shadow-2xl">{t.gameOver}</h1>
+        <p className="text-2xl text-slate-400 mb-12 max-w-2xl">{state.gameOverReason}</p>
+        <button onClick={() => { localStorage.removeItem(SAVE_KEY); setState(INITIAL_STATE); window.location.reload(); }} className="px-16 py-6 bg-white text-slate-950 font-black rounded-3xl hover:bg-slate-200 transition-all uppercase tracking-[0.5em] active-crunch shadow-[0_0_60px_rgba(255,255,255,0.4)]">{t.restart}</button>
       </div>
     );
   }
 
-  const tabs = [
-    { id: 'main', label: t.main },
-    { id: 'gemini', label: 'Gemini Lab', icon: '✨' },
-    { id: 'shop', label: t.shop },
-    ...(state.isElonModeUnlocked ? [{ id: 'elon', label: t.elonTitle, icon: '💰' }] : []),
-    ...(state.isBillModeUnlocked ? [{ id: 'bill', label: t.billTitle, icon: '💳' }] : []),
-    { id: 'inventory', label: t.inventory },
-    { id: 'restaurant', label: t.restaurant },
-    { id: 'settings', label: t.settings },
-    ...(state.isAdminUnlocked ? [{ id: 'admin', label: 'Admin', icon: '🛡️' }] : [])
-  ];
-
   return (
-    <div className="h-screen bg-slate-950 text-slate-200 flex flex-col overflow-hidden sm:text-base text-sm">
+    <div className="h-screen bg-transparent text-slate-200 flex flex-col overflow-hidden relative">
       <StatsBar state={state} />
       <NotificationSystem notifications={notifications} />
+
+      <div className="fixed inset-0 pointer-events-none z-[400]">
+        {floatingRewards.map(reward => (
+          <div key={reward.id} className={`absolute font-black text-4xl animate-float-up-fade ${reward.color} shadow-lg`} style={{ left: reward.x - 20, top: reward.y - 40 }}>
+            {reward.text}
+          </div>
+        ))}
+      </div>
 
       {activeSponsor && (
         <SponsorshipDialog 
@@ -551,251 +502,154 @@ const App: React.FC = () => {
         />
       )}
 
-      <nav className="flex justify-center flex-wrap gap-1 sm:gap-4 p-2 sm:p-4 bg-slate-900 border-b border-slate-800 shrink-0 animate-slide-down">
+      <nav className="flex justify-center flex-wrap gap-2 sm:gap-3 p-4 glass border-b border-slate-800 shrink-0 z-40 animate-slide-down">
         {tabs.map((tab) => (
           <button 
             key={tab.id}
             onClick={() => setCurrentTab(tab.id as any)}
-            className={`px-3 py-2 rounded-xl font-bold transition-all text-[10px] sm:text-xs uppercase tracking-wider flex items-center gap-2 hover:bg-slate-800 active-shrink ${currentTab === tab.id ? 'bg-blue-600 text-white shadow-lg' : 'text-slate-400'}`}
+            className={`px-5 py-3 rounded-2xl font-black transition-all text-xs sm:text-sm uppercase tracking-[0.2em] flex items-center gap-3 active-crunch border-2 border-transparent ${currentTab === tab.id ? 'bg-blue-600 text-white shadow-[0_0_30px_rgba(37,99,235,0.7)] border-blue-400 scale-105 animate-glow-pulse' : 'text-slate-500 hover:text-slate-200 hover:bg-slate-800/60'}`}
           >
-            {tab.icon && <span>{tab.icon}</span>}
-            {tab.label}
+            <span>{tab.icon}</span>
+            <span className="hidden md:inline">{tab.label}</span>
           </button>
         ))}
       </nav>
 
-      <main className="flex-1 overflow-y-auto p-4 flex flex-col items-center w-full">
-        
+      <main className="flex-1 overflow-y-auto p-6 flex flex-col items-center w-full relative">
         {currentTab === 'main' && (
-          <div className="w-full max-w-4xl grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6 pb-12 animate-slide-up">
-            <div className="space-y-4">
-              <div className="bg-slate-900 border border-slate-800 rounded-3xl p-5 shadow-sm hover-lift">
-                <h2 className="text-xs font-bold mb-4 uppercase text-slate-400 tracking-widest">{t.subGoal}</h2>
-                <div className="relative h-3 bg-slate-800 rounded-full overflow-hidden">
-                  <div className="h-full bg-blue-500 transition-all duration-1000" style={{ width: `${Math.min(100, (state.subscribers / currentMilestone) * 100)}%` }}></div>
+          <div className="w-full max-w-6xl grid grid-cols-1 md:grid-cols-2 gap-8 pb-16 animate-slide-up">
+            <div className="space-y-6">
+              <div className="bg-slate-900/90 glass liquid-border rounded-[3rem] p-8 shadow-2xl hover-3d relative overflow-hidden">
+                <h2 className="text-xs font-black mb-6 uppercase text-slate-500 tracking-[0.4em]">{t.subGoal}</h2>
+                <div className="relative h-6 bg-slate-950 rounded-full overflow-hidden shadow-inner border border-slate-800 p-1">
+                  <div className="h-full bg-gradient-to-r from-blue-700 to-purple-600 rounded-full transition-all duration-[2000ms] animate-reveal" style={{ width: `${Math.min(100, (state.subscribers / currentMilestone) * 100)}%` }}></div>
                 </div>
-                <div className="flex justify-between text-[10px] mt-2 font-bold text-slate-500">
-                  <span>{state.subscribers.toLocaleString()}</span>
-                  <span>{currentMilestone.toLocaleString()}</span>
-                </div>
-              </div>
-
-              <div className="grid grid-cols-2 gap-3">
-                <div className="bg-slate-900 p-4 rounded-3xl border border-slate-800 text-center shadow-sm hover-lift">
-                  <p className="text-[10px] text-slate-500 uppercase font-black tracking-widest">{t.totalVideos}</p>
-                  <p className="text-xl font-black text-white">{state.videoCount}</p>
-                </div>
-                <div className="bg-slate-900 p-4 rounded-3xl border border-slate-800 text-center shadow-sm hover-lift">
-                  <p className="text-[10px] text-slate-500 uppercase font-black tracking-widest">{t.boost}</p>
-                  <p className="text-xl font-black text-emerald-400">x{multipliers.moneyMult.toFixed(1)}</p>
+                <div className="flex justify-between text-sm mt-4 font-black tracking-[0.2em]">
+                  <span className="text-slate-300">{state.subscribers.toLocaleString()}</span>
+                  <span className="text-blue-500">{currentMilestone.toLocaleString()}</span>
                 </div>
               </div>
-
-              <div className="bg-slate-900 border border-slate-800 rounded-3xl p-5 shadow-sm border-l-4 border-l-blue-500 hover-lift">
-                <h2 className="text-[10px] font-black mb-2 uppercase text-blue-400 tracking-widest">{t.strategy}</h2>
-                <p className="text-xs text-slate-400 leading-relaxed italic">
-                  {t.strategyDesc}
-                </p>
+              <div className="grid grid-cols-2 gap-6">
+                <div className="bg-slate-900/90 glass p-8 rounded-[2.5rem] border border-slate-800 text-center shadow-xl hover-3d">
+                  <p className="text-[10px] text-slate-600 uppercase font-black mb-2 tracking-widest">{t.totalVideos}</p>
+                  <p className="text-4xl font-black text-white">{state.videoCount}</p>
+                </div>
+                <div className="bg-slate-900/90 glass p-8 rounded-[2.5rem] border border-slate-800 text-center shadow-xl hover-3d">
+                  <p className="text-[10px] text-slate-600 uppercase font-black mb-2 tracking-widest">{t.boost}</p>
+                  <p className="text-4xl font-black text-emerald-400">x{multipliers.moneyMult.toFixed(1)}</p>
+                </div>
               </div>
+              <div className="bg-slate-900/90 glass border-2 border-slate-800 rounded-[2.5rem] p-8 shadow-xl hover-3d">
+                <h2 className="text-[10px] font-black mb-6 uppercase text-slate-500 tracking-[0.4em]">{t.redeem}</h2>
+                <div className="flex gap-4">
+                  <input type="text" value={promoCode} onChange={(e) => setPromoCode(e.target.value)} placeholder={t.enterCode} className="flex-1 bg-slate-950 border border-slate-800 rounded-2xl px-6 py-4 text-sm text-white focus:outline-none focus:ring-2 focus:ring-blue-600/50" />
+                  <button onClick={handleRedeemCode} className="bg-blue-600 px-8 py-4 rounded-2xl text-[11px] font-black uppercase tracking-[0.3em] hover:bg-blue-500 active-crunch btn-gliss">{t.redeem}</button>
+                </div>
+              </div>
+            </div>
+            <div className="flex flex-col gap-6">
+              <button onClick={(e) => handleAction('video', e)} className="p-10 bg-blue-700 hover:bg-blue-600 rounded-[3rem] font-black uppercase shadow-2xl active-crunch transition-all text-white flex flex-col items-center gap-4 hover-3d border-2 border-blue-500/50 animate-breath">
+                <span className="text-3xl">🎥 {t.uploadVideo}</span>
+                <span className="text-xs opacity-60 normal-case">{t.videoBtnDesc}</span>
+              </button>
+              <button onClick={(e) => handleAction('cooking', e)} className="p-8 bg-orange-700 hover:bg-orange-600 rounded-[3rem] font-black uppercase shadow-2xl active-crunch transition-all text-white flex flex-col items-center gap-2 hover-3d border-2 border-orange-500/50">
+                <span className="text-xl">🍳 {t.uploadCooking}</span>
+                <span className="text-[10px] opacity-60 normal-case">{t.cookingBtnDesc}</span>
+              </button>
+              <button onClick={(e) => handleAction('promo', e)} className="p-8 bg-indigo-700 hover:bg-indigo-600 rounded-[3rem] font-black uppercase shadow-2xl active-crunch transition-all text-white flex flex-col items-center gap-2 hover-3d border-2 border-indigo-500/50">
+                <span className="text-xl">📢 {t.brandPromo}</span>
+                <span className="text-[10px] opacity-60 normal-case">{t.promoBtnDesc}</span>
+              </button>
+              <button onClick={(e) => handleAction('project', e)} className="p-8 bg-emerald-700 hover:bg-emerald-600 rounded-[3rem] font-black uppercase shadow-2xl active-crunch transition-all text-white flex flex-col items-center gap-2 hover-3d border-2 border-emerald-500/50">
+                <span className="text-xl">💻 {t.newProject}</span>
+                <span className="text-[10px] opacity-60 normal-case">{t.projectBtnDesc}</span>
+              </button>
+              <button onClick={(e) => handleAction('cheat', e)} className="p-6 bg-red-950/40 border-4 border-dashed border-red-600/40 rounded-[3rem] text-red-500 font-black active-crunch transition-all uppercase flex flex-col items-center gap-2 hover-3d">
+                <span>☢️ {t.uploadCheat}</span>
+              </button>
+            </div>
+          </div>
+        )}
 
-              <div className="bg-slate-900 border border-slate-800 rounded-3xl p-5 shadow-sm hover-lift">
-                <h2 className="text-[10px] font-bold mb-3 uppercase text-slate-500 tracking-widest">{t.redeem}</h2>
-                <div className="flex gap-2">
-                  <input 
-                    type="text" value={promoCode} onChange={(e) => setPromoCode(e.target.value)}
-                    placeholder={t.enterCode}
-                    onKeyDown={(e) => e.key === 'Enter' && handleRedeemCode()}
-                    className="flex-1 bg-slate-800 border border-slate-700 rounded-xl px-4 py-2 text-sm focus:outline-none focus:border-blue-500 text-white transition-all"
+        {currentTab === 'gemini' && state.isAdminUnlocked && (
+          <div className="w-full max-w-5xl flex flex-col gap-8 pb-20 animate-slide-up">
+            <div className="bg-indigo-950/50 glass liquid-border rounded-[4rem] p-12 flex flex-col items-center text-center relative overflow-hidden group shadow-2xl hover-3d">
+              <h2 className="text-5xl font-black text-white uppercase mb-4">Gemini Neural Core</h2>
+              <p className="text-indigo-400 text-xs font-black uppercase tracking-[0.6em] mb-12 opacity-80">Quantum Trend Synthesis Interface</p>
+              <div className="w-full max-w-3xl bg-slate-950/90 rounded-[3rem] border-2 border-indigo-500/40 p-10 min-h-[220px] flex items-center justify-center mb-12 relative overflow-hidden shadow-inner">
+                {isAiLoading ? (
+                  <div className="flex flex-col items-center gap-6">
+                    <div className="w-16 h-16 border-4 border-indigo-500/20 border-t-indigo-500 rounded-full animate-spin"></div>
+                    <p className="text-sm text-indigo-400 font-black uppercase animate-pulse">Scanning Future Trends...</p>
+                  </div>
+                ) : aiResponse ? (
+                  <p className="text-3xl font-black text-white italic drop-shadow-md leading-tight">
+                    "<TypingEffect text={aiResponse} />"
+                  </p>
+                ) : (
+                  <p className="text-slate-600 text-xs uppercase font-black tracking-[0.8em]">Core Standby</p>
+                )}
+              </div>
+              <button onClick={handleGeminiCall} disabled={isAiLoading} className={`px-16 py-7 rounded-[2rem] font-black uppercase text-xl tracking-[0.3em] transition-all active-crunch border-4 ${isAiLoading ? 'bg-slate-900 border-slate-800 text-slate-700' : 'bg-indigo-600 border-indigo-400 text-white shadow-2xl'}`}>
+                {isAiLoading ? 'SYNCING...' : 'EXECUTE NEURAL SEARCH'}
+              </button>
+            </div>
+          </div>
+        )}
+
+        {currentTab === 'gemini-admin' && state.isAdminUnlocked && (
+          <div className="w-full max-w-5xl flex flex-col gap-8 pb-20 animate-pop-in">
+            <div className="bg-slate-950/90 glass border-4 border-indigo-600/60 rounded-[4rem] p-12 flex flex-col items-center text-center relative overflow-hidden shadow-[0_0_100px_rgba(79,70,229,0.3)] hover-3d">
+              <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/carbon-fibre.png')] opacity-20"></div>
+              
+              <div className="relative z-10 w-full">
+                <h2 className="text-4xl font-black text-indigo-400 uppercase mb-2 tracking-[0.3em] drop-shadow-[0_0_15px_rgba(79,70,229,0.8)]">NEURAL ADMIN INTERFACE</h2>
+                <p className="text-slate-500 text-[10px] font-black uppercase tracking-[0.8em] mb-12">Direct Neural Modification System</p>
+                
+                <div className="w-full bg-black/60 rounded-[2rem] border border-indigo-500/30 p-8 mb-10 text-left font-mono">
+                  <div className="flex items-center gap-3 mb-4 border-b border-indigo-500/20 pb-4">
+                    <div className="w-3 h-3 rounded-full bg-red-500 animate-pulse"></div>
+                    <div className="w-3 h-3 rounded-full bg-yellow-500"></div>
+                    <div className="w-3 h-3 rounded-full bg-green-500"></div>
+                    <span className="text-[10px] text-indigo-300 uppercase ml-2 opacity-60">Terminal Session Active</span>
+                  </div>
+                  <div className="text-indigo-400 text-xs mb-2">root@gemini-tycoon:~# <span className="text-slate-200">INIT NEURAL_ADMIN_PROTOCOL</span></div>
+                  <div className="text-indigo-500/60 text-[10px] mb-8">Access granted. Monitoring natural language directives...</div>
+                  
+                  <textarea 
+                    value={neuralCommand}
+                    onChange={(e) => setNeuralCommand(e.target.value)}
+                    placeholder="Enter directive (e.g. 'Give me 10 million subs and 50 million lira')"
+                    className="w-full bg-transparent border-none focus:ring-0 text-slate-100 placeholder-indigo-900 resize-none h-32 text-lg"
                   />
-                  <button onClick={handleRedeemCode} className="bg-blue-600 px-4 py-2 rounded-xl text-xs font-bold uppercase tracking-widest hover:bg-blue-500 transition-all active-shrink">{t.redeem}</button>
                 </div>
-              </div>
-            </div>
 
-            <div className="flex flex-col gap-3">
-              <button onClick={() => handleAction('video')} className="p-6 bg-blue-600 hover:bg-blue-500 rounded-3xl font-black uppercase shadow-lg active-shrink transition-all text-white flex flex-col items-center gap-1 hover-lift">
-                <span className="text-xl">{t.uploadVideo}</span>
-                <span className="text-[9px] opacity-60 normal-case font-normal tracking-wider">{t.videoBtnDesc}</span>
-              </button>
-              <button onClick={() => handleAction('cooking')} className="p-4 bg-orange-600 hover:bg-orange-500 rounded-3xl font-black uppercase shadow-lg active-shrink transition-all text-white flex flex-col items-center gap-1 hover-lift">
-                <span className="text-sm">{t.uploadCooking}</span>
-                <span className="text-[8px] opacity-60 normal-case font-normal tracking-wider">{t.cookingBtnDesc}</span>
-              </button>
-              <button onClick={() => handleAction('promo')} className="p-4 bg-indigo-600 hover:bg-indigo-500 rounded-3xl font-black uppercase shadow-md active-shrink transition-all text-white flex flex-col items-center gap-1 hover-lift">
-                <span className="text-sm">{t.brandPromo}</span>
-                <span className="text-[8px] opacity-60 normal-case font-normal tracking-wider">{t.promoBtnDesc}</span>
-              </button>
-              <button onClick={() => handleAction('project')} className="p-4 bg-emerald-600 hover:bg-emerald-500 rounded-3xl font-black uppercase shadow-md active-shrink transition-all text-white flex flex-col items-center gap-1 hover-lift">
-                <span className="text-sm">{t.newProject}</span>
-                <span className="text-[8px] opacity-60 normal-case font-normal tracking-wider">{t.projectBtnDesc}</span>
-              </button>
-              <button onClick={() => handleAction('cheat')} className="p-4 bg-amber-900/10 border border-dashed border-amber-500/50 rounded-3xl text-amber-500 font-bold active-shrink transition-all uppercase flex flex-col items-center gap-1 hover-lift">
-                <span className="text-sm">{t.uploadCheat}</span>
-                <span className="text-[8px] opacity-60 normal-case font-normal tracking-wider">{t.cheatBtnDesc}</span>
-              </button>
-            </div>
-          </div>
-        )}
+                <button 
+                  onClick={handleNeuralAdminCall}
+                  disabled={isAiLoading || !neuralCommand.trim()}
+                  className={`w-full py-8 rounded-[2rem] font-black uppercase text-xl tracking-[0.4em] transition-all active-crunch border-4 ${isAiLoading ? 'bg-slate-900 border-slate-800 text-slate-700' : 'bg-indigo-700 border-indigo-400 text-white shadow-[0_0_50px_rgba(79,70,229,0.4)] hover:bg-indigo-600'}`}
+                >
+                  {isAiLoading ? 'INJECTING DIRECTIVE...' : 'INJECT NEURAL DATA'}
+                </button>
 
-        {currentTab === 'gemini' && (
-          <div className="w-full max-w-2xl bg-slate-900 border border-slate-800 rounded-3xl p-8 shadow-2xl space-y-6 relative overflow-hidden animate-slide-up">
-            <div className="absolute top-0 right-0 w-32 h-32 bg-blue-500/10 blur-3xl pointer-events-none rounded-full animate-pulse"></div>
-            <div className="flex items-center gap-4 mb-2">
-               <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-purple-600 rounded-2xl flex items-center justify-center text-2xl shadow-lg animate-bounce">✨</div>
-               <div>
-                 <h2 className="text-2xl font-black uppercase text-white tracking-tight">Gemini AI Lab</h2>
-                 <p className="text-xs text-slate-400 font-medium italic">"Tell Gemini what to add..."</p>
-               </div>
-            </div>
-            <div className="space-y-4">
-              <textarea 
-                value={aiPrompt}
-                onChange={(e) => setAiPrompt(e.target.value)}
-                placeholder={state.language === 'tr' ? "Sadece özellik ekleyebilir. Kaynak veremez. (Kodsuz)" : "Can only add features. Cannot give resources without code."}
-                className="w-full h-32 bg-slate-800 border-2 border-slate-700 rounded-2xl p-4 text-sm focus:outline-none focus:border-blue-500 text-white resize-none transition-all placeholder:text-slate-500"
-              />
-              <button onClick={handleGeminiLab} disabled={isAiLoading || !aiPrompt.trim()} className={`w-full py-4 rounded-2xl font-black uppercase tracking-widest text-sm shadow-xl transition-all relative overflow-hidden active-shrink group ${isAiLoading ? 'bg-slate-800 text-slate-600 cursor-not-allowed' : 'bg-gradient-to-r from-blue-600 to-purple-600 hover:scale-[1.02] text-white'}`}>
-                {isAiLoading ? "AI IS THINKING..." : "EXECUTE PROMPT"}
-              </button>
-            </div>
-          </div>
-        )}
-
-        {currentTab === 'elon' && (
-          <div className="w-full max-w-6xl flex flex-col gap-6 pb-20 animate-slide-up">
-            <div className="sticky top-0 z-40 bg-slate-950/80 backdrop-blur-md p-6 border border-slate-800 rounded-3xl shadow-xl flex flex-col items-center gap-2">
-              <h2 className="text-2xl font-black text-white uppercase">{t.elonTitle}</h2>
-              <div className="text-3xl font-black text-emerald-400 tabular-nums animate-pulse">
-                $ {elonStats.remaining.toLocaleString()}
-              </div>
-              <p className="text-[10px] text-slate-500 uppercase font-bold">{t.elonDesc}</p>
-            </div>
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-              {ELON_ITEMS.map(item => {
-                const qty = state.elonPurchases?.[item.id] || 0;
-                return (
-                  <div key={item.id} className="bg-slate-900 border border-slate-800 rounded-2xl overflow-hidden flex flex-col group hover-lift animate-fade-in">
-                    <img src={item.image} className="h-32 w-full object-cover group-hover:scale-105 transition-transform duration-500" />
-                    <div className="p-4 flex flex-col gap-3">
-                      <div className="flex justify-between items-start">
-                        <h4 className="font-bold text-white text-sm uppercase">{item.name[state.language]}</h4>
-                        <span className="text-emerald-400 text-xs font-black">$ {item.price.toLocaleString()}</span>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <button onClick={() => handleElonAction(item.id, 'sell')} disabled={qty === 0} className="flex-1 py-2 bg-red-600/20 border border-red-500/50 text-red-500 text-[10px] font-black rounded-lg hover:bg-red-500 hover:text-white transition-all disabled:opacity-20 active-shrink">{t.sell}</button>
-                        <div className="w-12 text-center text-sm font-black text-white">{qty}</div>
-                        <button onClick={() => handleElonAction(item.id, 'buy')} disabled={elonStats.remaining < item.price} className="flex-1 py-2 bg-emerald-600/20 border border-red-500/50 text-emerald-500 text-[10px] font-black rounded-lg hover:bg-emerald-500 hover:text-white transition-all disabled:opacity-20 active-shrink">{t.buy}</button>
-                      </div>
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-          </div>
-        )}
-
-        {currentTab === 'bill' && (
-          <div className="w-full max-w-6xl flex flex-col gap-6 pb-20 animate-slide-up">
-            <div className="sticky top-0 z-40 bg-slate-950/80 backdrop-blur-md p-6 border border-slate-800 rounded-3xl shadow-xl flex flex-col items-center gap-2">
-              <h2 className="text-2xl font-black text-white uppercase">{t.billTitle}</h2>
-              <div className="text-3xl font-black text-blue-400 tabular-nums animate-pulse">
-                $ {billStats.remaining.toLocaleString()}
-              </div>
-              <p className="text-[10px] text-slate-500 uppercase font-bold">{t.billDesc}</p>
-            </div>
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-              {BILL_ITEMS.map(item => {
-                const qty = state.billPurchases?.[item.id] || 0;
-                return (
-                  <div key={item.id} className="bg-slate-900 border border-slate-800 rounded-2xl overflow-hidden flex flex-col group hover-lift animate-fade-in">
-                    <img src={item.image} className="h-32 w-full object-cover group-hover:scale-105 transition-transform duration-500" />
-                    <div className="p-4 flex flex-col gap-3">
-                      <div className="flex justify-between items-start">
-                        <h4 className="font-bold text-white text-sm uppercase">{item.name[state.language]}</h4>
-                        <span className="text-blue-400 text-xs font-black">$ {item.price.toLocaleString()}</span>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <button onClick={() => handleBillAction(item.id, 'sell')} disabled={qty === 0} className="flex-1 py-2 bg-red-600/20 border border-red-500/50 text-red-500 text-[10px] font-black rounded-lg hover:bg-red-500 hover:text-white transition-all disabled:opacity-20 active-shrink">{t.sell}</button>
-                        <div className="w-12 text-center text-sm font-black text-white">{qty}</div>
-                        <button onClick={() => handleBillAction(item.id, 'buy')} disabled={billStats.remaining < item.price} className="flex-1 py-2 bg-blue-600/20 border border-red-500/50 text-blue-500 text-[10px] font-black rounded-lg hover:bg-blue-500 hover:text-white transition-all disabled:opacity-20 active-shrink">{t.buy}</button>
-                      </div>
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-          </div>
-        )}
-
-        {currentTab === 'admin' && (
-          <div className="w-full max-w-4xl bg-slate-900 border border-slate-800 rounded-3xl p-8 shadow-2xl space-y-8 pb-20 animate-slide-up">
-             <div className="flex items-center gap-4 mb-2">
-               <div className="w-12 h-12 bg-red-600 rounded-2xl flex items-center justify-center text-2xl shadow-lg">🛡️</div>
-               <div>
-                 <h2 className="text-2xl font-black uppercase text-white tracking-tight">{t.adminTitle}</h2>
-                 <p className="text-xs text-slate-400 font-medium italic">{t.adminDesc}</p>
-               </div>
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div className="space-y-4">
-                <h3 className="text-xs font-black uppercase text-slate-500 tracking-widest">Resources</h3>
-                <div className="space-y-3">
-                  <div className="flex flex-col gap-1">
-                    <label className="text-[10px] font-bold text-slate-600 uppercase">Set Money (₺)</label>
-                    <input type="number" value={adminMoney} onChange={(e) => setAdminMoney(e.target.value)} placeholder={state.money.toString()} className="bg-slate-800 border border-slate-700 rounded-xl px-4 py-2 text-sm text-white focus:outline-none focus:border-blue-500 transition-all" />
-                  </div>
-                  <div className="flex flex-col gap-1">
-                    <label className="text-[10px] font-bold text-slate-600 uppercase">Set Subscribers</label>
-                    <input type="number" value={adminSubs} onChange={(e) => setAdminSubs(e.target.value)} placeholder={state.subscribers.toString()} className="bg-slate-800 border border-slate-700 rounded-xl px-4 py-2 text-sm text-white focus:outline-none focus:border-blue-500 transition-all" />
-                  </div>
-                  <div className="flex flex-col gap-1">
-                    <label className="text-[10px] font-bold text-slate-600 uppercase">Set Reputation</label>
-                    <input type="number" value={adminRep} onChange={(e) => setAdminRep(e.target.value)} placeholder={state.reputation.toString()} className="bg-slate-800 border border-slate-700 rounded-xl px-4 py-2 text-sm text-white focus:outline-none focus:border-blue-500 transition-all" />
-                  </div>
-                </div>
-              </div>
-
-              <div className="space-y-4">
-                <h3 className="text-xs font-black uppercase text-slate-500 tracking-widest">Luck & Progression</h3>
-                <div className="grid grid-cols-1 gap-3">
-                  <div className="flex flex-col gap-1">
-                    <label className="text-[10px] font-black text-slate-600 uppercase tracking-widest">{t.setSponsorLuck}</label>
-                    <div className="flex items-center gap-2">
-                      <input 
-                        type="number" 
-                        value={adminLuck} 
-                        onChange={(e) => setAdminLuck(e.target.value)} 
-                        placeholder={state.sponsorLuck.toString()}
-                        className="flex-1 bg-slate-800 border border-slate-700 rounded-xl px-4 py-2 text-sm text-white focus:outline-none focus:border-blue-500 transition-all" 
-                      />
-                      <span className="text-sm font-black text-orange-500">x luck</span>
-                    </div>
-                  </div>
-                  <div className="pt-2">
-                    <button onClick={handleAdminUpdateStats} className="w-full py-3 bg-blue-600 hover:bg-blue-500 rounded-xl font-bold uppercase text-xs tracking-widest transition-all text-white shadow-lg active-shrink">{t.updateStats}</button>
-                  </div>
-                  <button onClick={() => setState(prev => ({ ...prev, isElonModeUnlocked: true, isBillModeUnlocked: true }))} className="py-3 bg-emerald-600/20 border border-emerald-500/50 text-emerald-500 rounded-xl font-bold uppercase text-xs hover:bg-emerald-600 hover:text-white transition-all active-shrink">{t.unlockAllModes}</button>
-                  <button onClick={() => setState(prev => ({ ...prev, inventory: SHOP_ITEMS.map(i => i.id) }))} className="py-3 bg-purple-600/20 border border-purple-500/50 text-purple-500 rounded-xl font-bold uppercase text-xs hover:bg-purple-600 hover:text-white transition-all active-shrink">{t.addAllItems}</button>
-                  <button onClick={() => { localStorage.removeItem(SAVE_KEY); setState(INITIAL_STATE); }} className="py-3 bg-red-600/20 border border-red-500/50 text-red-500 rounded-xl font-bold uppercase text-xs hover:bg-red-600 hover:text-white transition-all active-shrink">{t.resetGame}</button>
-                </div>
+                <p className="mt-8 text-[9px] text-slate-600 uppercase tracking-[0.5em] font-black italic">Warning: Direct neural modification may destabilize economic reality</p>
               </div>
             </div>
           </div>
         )}
 
         {currentTab === 'shop' && (
-          <div className="w-full max-w-6xl grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 pb-20 animate-slide-up">
-            {SHOP_ITEMS.map(item => {
+          <div className="w-full max-w-7xl grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-10 pb-32">
+            {SHOP_ITEMS.map((item) => {
               const owned = state.inventory.includes(item.id);
               return (
-                <div key={item.id} className="bg-slate-900 border border-slate-800 rounded-3xl overflow-hidden flex flex-col shadow-sm group hover-lift animate-fade-in">
-                  <div className="h-44 overflow-hidden"><img src={item.image} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" alt={item.name[state.language]} /></div>
-                  <div className="p-6 flex-1 flex flex-col">
-                    <h3 className="font-bold text-white mb-2 text-lg uppercase tracking-tight">{item.name[state.language]}</h3>
-                    <p className="text-xs text-slate-400 mb-6 flex-1 leading-relaxed">{item.description[state.language]}</p>
-                    <button onClick={() => buyItem(item)} disabled={owned} className={`w-full py-3 rounded-xl font-bold transition-all uppercase text-xs tracking-widest active-shrink ${owned ? 'bg-slate-800 text-slate-500' : 'bg-emerald-600 hover:bg-emerald-500 text-white shadow-md'}`}>
-                      {owned ? t.owned : `${item.price.toLocaleString()} ₺`}
+                <div key={item.id} className={`bg-slate-900/95 glass border-4 ${owned ? 'border-blue-600/60' : 'border-slate-800'} rounded-[4rem] overflow-hidden flex flex-col shadow-2xl hover-3d animate-pop-in`}>
+                  <div className="h-64 overflow-hidden relative"><img src={item.image} className="w-full h-full object-cover" alt={item.name[state.language]} /></div>
+                  <div className="p-10 flex-1 flex flex-col">
+                    <h3 className="font-black text-white mb-4 text-3xl uppercase">{item.name[state.language]}</h3>
+                    <p className="text-sm text-slate-500 mb-10 flex-1 leading-relaxed italic">{item.description[state.language]}</p>
+                    <button onClick={(e) => buyItem(item, e)} disabled={owned} className={`w-full py-6 rounded-[2rem] font-black transition-all uppercase text-xs tracking-[0.3em] active-crunch border-4 ${owned ? 'bg-slate-800 text-slate-600 border-slate-700' : 'bg-emerald-600 border-emerald-400 text-white shadow-2xl btn-gliss'}`}>
+                      {owned ? 'UNIT OWNED' : `${item.price.toLocaleString()} ₺`}
                     </button>
                   </div>
                 </div>
@@ -805,20 +659,21 @@ const App: React.FC = () => {
         )}
 
         {currentTab === 'inventory' && (
-          <div className="w-full max-w-4xl pb-20 animate-slide-up">
+          <div className="w-full max-w-7xl pb-32">
             {state.inventory.length === 0 ? (
-              <div className="py-24 text-center border-2 border-dashed border-slate-800 rounded-3xl text-slate-500 italic uppercase tracking-widest text-xs animate-fade-in">{t.noItems}</div>
+              <div className="py-56 text-center border-8 border-dashed border-slate-800/60 rounded-[5rem] glass animate-fade-in group hover-3d">
+                <span className="text-9xl block mb-10 opacity-40">🫙</span>
+                <p className="text-slate-700 font-black uppercase tracking-[0.6em] text-sm">{t.noItems}</p>
+              </div>
             ) : (
-              <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
-                {state.inventory.map(id => {
+              <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-8">
+                {state.inventory.map((id) => {
                   const item = SHOP_ITEMS.find(i => i.id === id);
                   return item && (
-                    <div key={id} className="bg-slate-900 p-5 rounded-3xl border border-slate-800 flex flex-col items-center text-center shadow-sm hover-lift animate-pop-in">
-                      <div className="w-16 h-16 rounded-xl overflow-hidden mb-3"><img src={item.image} className="w-full h-full object-cover" /></div>
-                      <div className="flex flex-col">
-                        <span className="text-[10px] font-bold text-white uppercase tracking-tighter leading-tight">{item.name[state.language]}</span>
-                        <span className="text-[8px] text-blue-400 mt-1 uppercase font-black">x{item.multiplier} BOOST</span>
-                      </div>
+                    <div key={id} className="bg-slate-900/90 glass p-10 rounded-[4rem] border-4 border-slate-800 flex flex-col items-center text-center shadow-2xl hover-3d liquid-border animate-pop-in">
+                      <img src={item.image} className="w-24 h-24 rounded-full object-cover mb-8 shadow-2xl ring-4 ring-slate-800" />
+                      <span className="text-lg font-black text-white uppercase">{item.name[state.language]}</span>
+                      <span className="text-[10px] text-blue-400 uppercase font-black tracking-widest mt-2">x{item.multiplier} BOOST</span>
                     </div>
                   );
                 })}
@@ -828,38 +683,122 @@ const App: React.FC = () => {
         )}
 
         {currentTab === 'restaurant' && (
-          <div className="w-full max-w-5xl grid grid-cols-1 sm:grid-cols-3 gap-6 pb-20 animate-slide-up">
-            {RESTAURANTS.map(res => (
-              <div key={res.id} className={`bg-slate-900 border ${state.activeRestaurant === res.id ? 'border-orange-500 shadow-orange-500/20 shadow-lg' : 'border-slate-800'} rounded-3xl p-6 flex flex-col items-center text-center transition-all hover-lift animate-fade-in`}>
-                <div className="w-24 h-24 mb-4 flex items-center justify-center bg-white rounded-full p-2 overflow-hidden shadow-inner"><img src={res.logo} className="w-full h-full object-contain" /></div>
-                <h3 className="text-xl font-black text-white uppercase mb-1">{res.name}</h3>
-                <p className="text-emerald-400 font-bold mb-4 text-sm">{res.price.toLocaleString()} ₺</p>
-                <p className="text-xs text-slate-400 mb-6 flex-1 italic">{res.desc[state.language]}</p>
-                <button onClick={() => eatAtRestaurant(res)} className={`w-full py-3 rounded-xl font-bold uppercase text-[10px] tracking-widest transition-all active-shrink ${state.activeRestaurant === res.id ? 'bg-orange-600 text-white' : 'bg-slate-800 text-slate-400 hover:bg-slate-700'}`}>
-                  {state.activeRestaurant === res.id ? t.active : t.visit}
+          <div className="w-full max-w-7xl grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-10 pb-32">
+            {RESTAURANTS.map((res) => (
+              <div key={res.id} className={`bg-slate-900/90 glass border-4 ${state.activeRestaurant === res.id ? 'border-orange-600 shadow-2xl animate-glow-pulse' : 'border-slate-800'} rounded-[4rem] p-12 flex flex-col items-center text-center hover-3d animate-pop-in`}>
+                <div className="w-32 h-32 mb-10 bg-white rounded-full p-6 shadow-xl"><img src={res.logo} className="w-full h-full object-contain" /></div>
+                <h3 className="text-3xl font-black text-white uppercase mb-3">{res.name}</h3>
+                <p className="text-orange-500 font-black mb-8 text-2xl">{res.price.toLocaleString()} ₺</p>
+                <p className="text-xs text-slate-500 mb-12 flex-1 italic">{res.desc[state.language]}</p>
+                <button onClick={(e) => eatAtRestaurant(res, e)} className={`w-full py-6 rounded-3xl font-black uppercase text-xs tracking-[0.3em] transition-all active-crunch border-4 ${state.activeRestaurant === res.id ? 'bg-orange-600 text-white border-orange-400' : 'bg-slate-800 text-slate-400 border-slate-700 btn-gliss'}`}>
+                  {state.activeRestaurant === res.id ? 'ACTIVE PROTOCOL' : 'ENGAGE FEAST'}
                 </button>
               </div>
             ))}
           </div>
         )}
 
-        {currentTab === 'settings' && (
-          <div className="w-full max-w-md bg-slate-900 border border-slate-800 rounded-3xl p-8 space-y-8 shadow-xl animate-slide-up">
-            <h2 className="text-xl font-black uppercase text-white tracking-widest">{t.settings}</h2>
-            <div className="space-y-4">
-              <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest">{t.langHeader}</label>
-              <div className="grid grid-cols-2 gap-2">
-                <button onClick={() => setState(p => ({ ...p, language: 'en' }))} className={`py-3 rounded-xl font-bold uppercase text-xs tracking-widest transition-all active-shrink ${state.language === 'en' ? 'bg-blue-600 text-white shadow-md' : 'bg-slate-800 text-slate-400 hover:bg-slate-700'}`}>English</button>
-                <button onClick={() => setState(p => ({ ...p, language: 'tr' }))} className={`py-3 rounded-xl font-bold uppercase text-xs tracking-widest transition-all active-shrink ${state.language === 'tr' ? 'bg-blue-600 text-white shadow-md' : 'bg-slate-800 text-slate-400 hover:bg-slate-700'}`}>Türkçe</button>
+        {currentTab === 'elon' && (
+          <div className="w-full max-w-7xl pb-32 animate-slide-up">
+            <div className="bg-slate-900/90 glass p-10 rounded-[4rem] border-4 border-slate-800 mb-10 shadow-2xl flex justify-between items-center hover-3d">
+              <div>
+                <h2 className="text-4xl font-black text-white uppercase mb-2">{t.elonTitle}</h2>
+                <p className="text-slate-500 text-sm font-black italic">{t.elonDesc}</p>
               </div>
+              <div className="text-right">
+                <p className="text-xs text-slate-500 uppercase font-black">{t.remaining}</p>
+                <p className="text-4xl font-black text-emerald-400">{elonStats.remaining.toLocaleString()} $</p>
+              </div>
+            </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-10">
+              {ELON_ITEMS.map((item) => {
+                const qty = state.elonPurchases?.[item.id] || 0;
+                return (
+                  <div key={item.id} className="bg-slate-900/90 glass p-8 rounded-[4rem] border-4 border-slate-800 flex flex-col items-center shadow-xl hover-3d animate-pop-in">
+                    <img src={item.image} className="h-40 w-full object-cover rounded-[3rem] mb-6 shadow-lg" alt={item.name[state.language]} />
+                    <h3 className="text-2xl font-black text-white uppercase mb-2">{item.name[state.language]}</h3>
+                    <p className="text-emerald-400 font-black text-xl mb-6">{item.price.toLocaleString()} $</p>
+                    <div className="flex items-center gap-6">
+                      <button onClick={() => handleElonAction(item.id, 'sell')} className="w-12 h-12 rounded-full bg-slate-800 text-white font-black hover:bg-red-600 active-crunch">-</button>
+                      <span className="text-3xl font-black text-white">{qty}</span>
+                      <button onClick={() => handleElonAction(item.id, 'buy')} className="w-12 h-12 rounded-full bg-slate-800 text-white font-black hover:bg-emerald-600 active-crunch">+</button>
+                    </div>
+                  </div>
+                );
+              })}
             </div>
           </div>
         )}
 
+        {currentTab === 'bill' && (
+          <div className="w-full max-w-7xl pb-32 animate-slide-up">
+             <div className="bg-slate-900/90 glass p-10 rounded-[4rem] border-4 border-slate-800 mb-10 shadow-2xl flex justify-between items-center hover-3d">
+              <div>
+                <h2 className="text-4xl font-black text-white uppercase mb-2">{t.billTitle}</h2>
+                <p className="text-slate-500 text-sm font-black italic">{t.billDesc}</p>
+              </div>
+              <div className="text-right">
+                <p className="text-xs text-slate-500 uppercase font-black">{t.remaining}</p>
+                <p className="text-4xl font-black text-emerald-400">{billStats.remaining.toLocaleString()} $</p>
+              </div>
+            </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-10">
+              {BILL_ITEMS.map((item) => {
+                const qty = state.billPurchases?.[item.id] || 0;
+                return (
+                  <div key={item.id} className="bg-slate-900/90 glass p-8 rounded-[4rem] border-4 border-slate-800 flex flex-col items-center shadow-xl hover-3d animate-pop-in">
+                    <img src={item.image} className="h-40 w-full object-cover rounded-[3rem] mb-6 shadow-lg" alt={item.name[state.language]} />
+                    <h3 className="text-2xl font-black text-white uppercase mb-2">{item.name[state.language]}</h3>
+                    <p className="text-emerald-400 font-black text-xl mb-6">{item.price.toLocaleString()} $</p>
+                    <div className="flex items-center gap-6">
+                      <button onClick={() => handleBillAction(item.id, 'sell')} className="w-12 h-12 rounded-full bg-slate-800 text-white font-black hover:bg-red-600 active-crunch">-</button>
+                      <span className="text-3xl font-black text-white">{qty}</span>
+                      <button onClick={() => handleBillAction(item.id, 'buy')} className="w-12 h-12 rounded-full bg-slate-800 text-white font-black hover:bg-emerald-600 active-crunch">+</button>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        )}
+
+        {currentTab === 'settings' && (
+          <div className="w-full max-w-xl bg-slate-900/90 glass border-4 border-slate-800 rounded-[4.5rem] p-16 space-y-16 shadow-2xl animate-pop-in relative overflow-hidden hover-3d">
+            <h2 className="text-4xl font-black uppercase text-white tracking-[0.5em] text-center border-b-4 border-slate-800 pb-10">SYSTEM CORE</h2>
+            <div className="space-y-8">
+              <label className="text-xs font-black text-slate-600 uppercase tracking-[0.6em] block text-center">Language</label>
+              <div className="grid grid-cols-2 gap-6">
+                <button onClick={() => setState(p => ({ ...p, language: 'en' }))} className={`py-6 rounded-3xl font-black uppercase text-sm tracking-[0.3em] transition-all active-crunch border-4 ${state.language === 'en' ? 'bg-blue-600 text-white border-blue-400 shadow-xl scale-105' : 'bg-slate-950/60 text-slate-600 border-slate-800'}`}>ENG</button>
+                <button onClick={() => setState(p => ({ ...p, language: 'tr' }))} className={`py-6 rounded-3xl font-black uppercase text-sm tracking-[0.3em] transition-all active-crunch border-4 ${state.language === 'tr' ? 'bg-blue-600 text-white border-blue-400 shadow-xl scale-105' : 'bg-slate-950/60 text-slate-600 border-slate-800'}`}>TR</button>
+              </div>
+            </div>
+            <div className="pt-12">
+               <button onClick={() => { if(confirm(t.confirmWipe)) { localStorage.removeItem(SAVE_KEY); setState(INITIAL_STATE); window.location.reload(); } }} className="w-full py-7 bg-red-950/30 border-4 border-red-600/40 text-red-600 rounded-[2.5rem] font-black uppercase text-xs tracking-[0.5em] hover:bg-red-600 hover:text-white transition-all">PURGE PROGRESS</button>
+            </div>
+          </div>
+        )}
+
+        {currentTab === 'admin' && state.isAdminUnlocked && (
+          <div className="w-full max-w-xl bg-slate-900/90 glass border-4 border-red-600/40 rounded-[4.5rem] p-16 space-y-12 shadow-2xl hover-3d animate-pop-in">
+            <h2 className="text-4xl font-black text-red-600 uppercase text-center border-b-4 border-slate-800 pb-10">God Mode</h2>
+            <div className="space-y-6">
+              <input type="number" value={adminMoney} onChange={(e) => setAdminMoney(e.target.value)} placeholder="Set Money" className="w-full bg-slate-950 border border-slate-800 rounded-2xl px-6 py-4 text-white" />
+              <input type="number" value={adminSubs} onChange={(e) => setAdminSubs(e.target.value)} placeholder="Set Subscribers" className="w-full bg-slate-950 border border-slate-800 rounded-2xl px-6 py-4 text-white" />
+              <button onClick={() => {
+                setState(prev => ({
+                  ...prev,
+                  money: adminMoney !== '' ? parseInt(adminMoney) : prev.money,
+                  subscribers: adminSubs !== '' ? parseInt(adminSubs) : prev.subscribers
+                }));
+                addNotification("Reality Altered!", "success");
+              }} className="w-full py-6 bg-red-600 text-white font-black rounded-3xl uppercase tracking-widest hover:bg-red-500 shadow-xl btn-gliss">Update Reality</button>
+            </div>
+          </div>
+        )}
       </main>
 
-      <footer className="p-4 bg-slate-900 border-t border-slate-800 text-center text-[10px] text-slate-600 font-bold uppercase tracking-widest shrink-0">
-        {t.footerText} &bull; {state.inventory.length} {t.itemsOwned}
+      <footer className="p-10 glass border-t border-slate-800 text-center text-xs text-slate-600 font-black uppercase tracking-[0.6em] shrink-0 z-40 relative">
+        <span>{t.footerText}</span> &bull; <span>{state.inventory.length} NODES CONNECTED</span>
       </footer>
     </div>
   );

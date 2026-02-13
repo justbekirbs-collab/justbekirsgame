@@ -1,4 +1,8 @@
-import { Sponsorship, ShopItem, LocalizedString, ElonItem, BillItem } from './types';
+
+import { Sponsorship, ShopItem, LocalizedString, ElonItem, BillItem } from './types.ts';
+
+// Defined milestones for subscriber goals
+export const MILESTONES = [100, 1000, 10000, 50000, 100000, 500000, 1000000, 10000000, 50000000, 100000000];
 
 export const TRANSLATIONS = {
   en: {
@@ -55,6 +59,7 @@ export const TRANSLATIONS = {
     langHeader: "Language",
     visit: "Eat",
     active: "Eaten",
+    redeemedCodes: "Redeemed Codes",
     // Action Descriptions
     videoBtnDesc: "Coding tutorial. (Reward: ~50 Sub, ~100₺, +2 Rep)",
     promoBtnDesc: "Brand showcase. (Reward: 100 Sub, 10,000₺, +10 Rep)",
@@ -133,6 +138,7 @@ export const TRANSLATIONS = {
     langHeader: "Dil",
     visit: "Yemek Ye",
     active: "Yenildi",
+    redeemedCodes: "Kullanılan Kodlar",
     // Action Descriptions
     videoBtnDesc: "Kodlama dersi. (Ödül: ~50 Abone, ~100₺, +2 İtibar)",
     promoBtnDesc: "Ürün tanıtımı. (Ödül: 100 Abone, 10.000₺, +10 İtibar)",
@@ -163,6 +169,45 @@ export const REAL_BRANDS = [
   "MSI", "Sony", "Razer", "Logitech", "JetBrains", "AWS", "DigitalOcean", 
   "Intel", "NVIDIA", "AMD", "ASUS", "Corsair", "SteelSeries", "HyperX", "Elgato", "Shure"
 ];
+
+export const BRAND_LOGOS: Record<string, string> = {
+  "MSI": "https://upload.wikimedia.org/wikipedia/tr/0/05/MSI_logo.png",
+  "Sony": "https://upload.wikimedia.org/wikipedia/commons/thumb/c/c1/Sony_logo.svg/1200px-Sony_logo.svg.png",
+  "Razer": "https://upload.wikimedia.org/wikipedia/en/thumb/4/44/Razer_Snake_Logo.svg/1200px-Razer_Snake_Logo.svg.png",
+  "Logitech": "https://upload.wikimedia.org/wikipedia/commons/thumb/1/17/Logitech_logo.svg/1200px-Logitech_logo.svg.png",
+  "JetBrains": "https://upload.wikimedia.org/wikipedia/commons/thumb/1/1a/JetBrains_Logo_2016.svg/1200px-JetBrains_Logo_2016.svg.png",
+  "AWS": "https://upload.wikimedia.org/wikipedia/commons/thumb/9/93/Amazon_Web_Services_Logo.svg/1024px-Amazon_Web_Services_Logo.svg.png",
+  "DigitalOcean": "https://upload.wikimedia.org/wikipedia/commons/thumb/f/ff/DigitalOcean_logo.svg/1200px-DigitalOcean_logo.svg.png",
+  "Intel": "https://upload.wikimedia.org/wikipedia/commons/thumb/7/7d/Intel_logo_%282020%2C_dark_blue%29.svg/1200px-Intel_logo_%282020%2C_dark_blue%29.svg.png",
+  "NVIDIA": "https://upload.wikimedia.org/wikipedia/sco/thumb/2/21/Nvidia_logo.svg/1200px-Nvidia_logo.svg.png",
+  "AMD": "https://upload.wikimedia.org/wikipedia/commons/thumb/7/7c/AMD_Logo.svg/1200px-AMD_Logo.svg.png",
+  "ASUS": "https://upload.wikimedia.org/wikipedia/commons/thumb/d/de/Asus_logo.svg/1200px-Asus_logo.svg.png",
+  "Corsair": "https://upload.wikimedia.org/wikipedia/en/thumb/3/36/Corsair_Logo.svg/1200px-Corsair_Logo.svg.png",
+  "SteelSeries": "https://upload.wikimedia.org/wikipedia/en/thumb/3/30/SteelSeries_logo.svg/1200px-SteelSeries_logo.svg.png",
+  "HyperX": "https://upload.wikimedia.org/wikipedia/commons/thumb/a/a2/HyperX_logo.svg/1200px-HyperX_logo.svg.png",
+  "Elgato": "https://upload.wikimedia.org/wikipedia/commons/thumb/5/5e/Elgato_logo.svg/1200px-Elgato_logo.svg.png",
+  "Shure": "https://upload.wikimedia.org/wikipedia/commons/thumb/4/4b/Shure_logo.svg/1200px-Shure_logo.svg.png",
+  "ScamGlobal Inc.": "https://img.icons8.com/color/512/pirate.png",
+  "YouTube Premium": "https://upload.wikimedia.org/wikipedia/commons/thumb/d/dd/YouTube_Premium_logo.svg/1280px-YouTube_Premium_logo.svg.png",
+  "KFC": "https://upload.wikimedia.org/wikipedia/tr/thumb/a/a5/Kentucky_Fried_Chicken_logo.svg/1280px-Kentucky_Fried_Chicken_logo.svg.png",
+  "Popeyes": "https://istanbulcevahir.com/wp-content/uploads/2023/02/popeyes-logo.png",
+  "Burger King": "https://upload.wikimedia.org/wikipedia/commons/thumb/c/cc/Burger_King_2020.svg/2048px-Burger_King_2020.svg.png",
+  "Wendy's": "https://upload.wikimedia.org/wikipedia/en/thumb/3/32/Wendy%27s_full_logo_2012.svg/1280px-Wendy%27s_full_logo_2012.svg.png",
+  "HD İskender": "https://www.forumkayseri.com/media/image/YS4XOVQXLQQMID.jpg",
+  "Kudo Kudo": "https://odoocdn.com/web/image/res.partner/17027629/avatar_1920/Kudo%20Kudo%20Türkiye?unique=12111c8",
+  "Domino's": "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTNovqh1yOCTHErr7yiL8SrAOLQtwqJEmTAjw&s",
+  "Starbucks": "https://upload.wikimedia.org/wikipedia/en/thumb/d/d3/Starbucks_Corporation_Logo_2011.svg/1200px-Starbucks_Corporation_Logo_2011.svg.png",
+  "Subway": "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQ0Wdjnyoayitz6UbXytlAa-LITVuOXsfg-Ug&s",
+  "Doyuyo": "https://www.mallofantalya.com.tr/content/upload/images/large/2025/08/doyuyo_logo.jpg",
+  "McDonald's": "https://upload.wikimedia.org/wikipedia/commons/thumb/3/36/McDonald%27s_Golden_Arches.svg/1200px-McDonald%27s_Golden_Arches.svg.png",
+  "Bursa Kebap Evi": "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTk_jC7JIEA2X8z-4p4Z2lxEJNqHpTjjeQ2tw&s",
+  "Planets Pizza": "https://images.squarespace-cdn.com/content/67caec292d79965e1f03863b/f8e95834-0f9a-430c-865f-b5c30091ebb2/hd-logo.png?format=1000w&content-type=image%2Fpng",
+  "Little Caesars": "https://images.deliveryhero.io/image/fd-tr/tr-logos/cs2tr-logo.jpg",
+  "Maydonoz Döner": "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRjMJBDAUmz4K-Z63H0Dq-TsgNbXYYsHaJBuA&s",
+  "Nebras": "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQMW39-N0YoeN-OVIUgmNoulOQnfjdlGc0i6A&s",
+  "Taco Bell": "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTLeeXNq1Ns1-jUhc9OPSwQB2-WRZW6mN0SMA&s",
+  "Tavuk Dünyası": "https://www.forumkayseri.com/media/image/QPX38VOALVQ9QF.png"
+};
 
 export const SCAM_DOMAINS = [
   "xxx.dolandiricilik.com",
@@ -195,6 +240,22 @@ export const COOKING_VIDEO_TITLES: LocalizedString[] = [
 
 export const SHOP_ITEMS: ShopItem[] = [
   {
+    id: "anonymous",
+    name: { en: "Anonymous Mask", tr: "Anonymous Maskesi" },
+    price: 500000,
+    multiplier: 12.0,
+    image: "https://upload.wikimedia.org/wikipedia/commons/thumb/a/a6/Anonymous_emblem.svg/500px-Anonymous_emblem.svg.png",
+    description: { en: "Expect us. Provides ultimate hacking aura. 12.0x multiplier!", tr: "Bizi bekleyin. Nihai hackleme aurası sağlar. 12.0x çarpan!" }
+  },
+  {
+    id: "sony_a7s_iii",
+    name: { en: "Sony A7S III", tr: "Sony A7S III" },
+    price: 85000,
+    multiplier: 2.8,
+    image: "https://images.unsplash.com/photo-1516035069371-29a1b244cc32?w=600",
+    description: { en: "Top-tier video quality for your VLOGs. 2.8x multiplier!", tr: "Vloglarınız için üst düzey video kalitesi. 2.8x çarpan!" }
+  },
+  {
     id: "yt_premium",
     name: { en: "YouTube Premium Subscription", tr: "YouTube Premium Aboneliği" },
     price: 150000,
@@ -203,12 +264,44 @@ export const SHOP_ITEMS: ShopItem[] = [
     description: { en: "Removes ads from your life! Massive 5.0x multiplier!", tr: "Hayatından reklamları çıkar! Devasa 5.0x çarpan!" }
   },
   {
+    id: "mac_pro",
+    name: { en: "Mac Pro", tr: "Mac Pro" },
+    price: 350000,
+    multiplier: 8.5,
+    image: "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcR4jySZ0hydPWdIpYKKNLrjjhQhCnsMGdCYMg&s",
+    description: { en: "The peak of performance. Insane 8.5x multiplier!", tr: "Performansın zirvesi. Çılgın 8.5x çarpan!" }
+  },
+  {
+    id: "mac_studio",
+    name: { en: "Mac Studio", tr: "Mac Studio" },
+    price: 95000,
+    multiplier: 3.2,
+    image: "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRwOYbnNNpwBcC3oc6WGAkCv-Dsfriuv3Dd4Q&s",
+    description: { en: "Powerhouse in a compact frame. 3.2x multiplier!", tr: "Küçük dev! 3.2x kazanç çarpanı!" }
+  },
+  {
     id: "rtx5090",
     name: { en: "NVIDIA RTX 5090", tr: "NVIDIA RTX 5090" },
     price: 50000,
     multiplier: 2.0,
     image: "https://images.unsplash.com/photo-1591488320449-011701bb6704?auto=format&fit=crop&q=80&w=600",
     description: { en: "World's most powerful GPU. 2x multiplier!", tr: "Dünyanın en güçlü ekran kartı. 2x Kazanç Çarpanı!" }
+  },
+  {
+    id: "macbook_pro_m4_max",
+    name: { en: "Macbook Pro M4 Max", tr: "MacBook Pro M4 Max" },
+    price: 120000,
+    multiplier: 4.2,
+    image: "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcS1kRCeu_N6xFLMDQaENNbRJTMW0EAEuRx02A&s",
+    description: { en: "The dream machine for devs. 4.2x multiplier!", tr: "Yazılımcının rüyası. 4.2x Kazanç Çarpanı!" }
+  },
+  {
+    id: "macbook_pro_m4",
+    name: { en: "Macbook Pro M4", tr: "MacBook Pro M4" },
+    price: 65000,
+    multiplier: 2.1,
+    image: "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcS1kRCeu_N6xFLMDQaENNbRJTMW0EAEuRx02A&s",
+    description: { en: "Standard pro performance. 2.1x multiplier!", tr: "Standart pro performansı. 2.1x çarpan!" }
   },
   {
     id: "shure_sm7b",
@@ -223,8 +316,24 @@ export const SHOP_ITEMS: ShopItem[] = [
     name: { en: "Razer Monitor", tr: "Razer Monitör" },
     price: 15000,
     multiplier: 1.2,
-    image: "https://images.unsplash.com/photo-1527443224154-c4a3942d3acf?auto=format&fit=crop&q=80&w=600",
+    image: "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQ4jpo4F6nF68jXHuO6jJ6gZIv5uMgmyje9Rg&s",
     description: { en: "High refresh rate. 1.2x multiplier!", tr: "Yüksek yenileme hızı. 1.2x Kazanç Çarpanı!" }
+  },
+  {
+    id: "nintendo_switch_2",
+    name: { en: "Nintendo Switch 2", tr: "Nintendo Switch 2" },
+    price: 35000,
+    multiplier: 1.6,
+    image: "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcS3sXlCMsEhZ1Q0_d0wZvvApAeVNoFkp78NtA&s",
+    description: { en: "The next-gen hybrid console. Huge 1.6x multiplier!", tr: "Yeni nesil hibrit konsol. Devasa 1.6x Kazanç Çarpanı!" }
+  },
+  {
+    id: "mac_mini",
+    name: { en: "Mac Mini M4", tr: "Mac Mini M4" },
+    price: 22000,
+    multiplier: 1.45,
+    image: "https://reimg-teknosa-cloud-prod.mncdn.com/mnresize/600/600/productimage/125015730/125015730_0_MC/97060785.jpg",
+    description: { en: "Small but mighty. 1.45x multiplier!", tr: "Küçük ama etkili. 1.45x kazanç!" }
   },
   {
     id: "ps5",
@@ -241,14 +350,6 @@ export const SHOP_ITEMS: ShopItem[] = [
     multiplier: 1.4,
     image: "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTdCmrrhVnj2o3om_G4Rv8A3E2XWwCaWBipXQ&s",
     description: { en: "The ultimate portable PC gaming machine. 1.4x multiplier!", tr: "Mükemmel taşınabilir PC oyun makinesi. 1.4x Kazanç Çarpanı!" }
-  },
-  {
-    id: "macbook_pro",
-    name: { en: "MacBook Pro M4 Max", tr: "MacBook Pro M4 Max" },
-    price: 120000,
-    multiplier: 3.5,
-    image: "https://images.unsplash.com/photo-1517336714731-489689fd1ca8?auto=format&fit=crop&q=80&w=600",
-    description: { en: "The dream machine for devs. 3.5x multiplier!", tr: "Yazılımcının rüyası. 3.5x Kazanç Çarpanı!" }
   }
 ];
 
@@ -416,6 +517,33 @@ export const getMaydonozDoner_Sponsorship = (): Sponsorship => ({
   description: { en: "The unique herbal taste! Showcase our signature wrap.", tr: "Eşsiz otlu lezzet! İmza dürümümüzü tanıt." }
 });
 
+export const getNebras_Sponsorship = (): Sponsorship => ({
+  id: 'nebras-' + Math.random().toString(36).substr(2, 5),
+  brand: "Nebras",
+  offer: 14500,
+  repImpact: 28,
+  isScam: false,
+  description: { en: "Authentic Middle Eastern cuisine! Showcase our signature dishes.", tr: "Otantik Orta Doğu mutfağı! İmza yemeklerimizi tanıt." }
+});
+
+export const getTacoBell_Sponsorship = (): Sponsorship => ({
+  id: 'taco-bell-' + Math.random().toString(36).substr(2, 5),
+  brand: "Taco Bell",
+  offer: 11500,
+  repImpact: 19,
+  isScam: false,
+  description: { en: "Live más! Promote our world-famous tacos and burritos.", tr: "Live más! Dünyaca ünlü taco ve burritolarımızı tanıt." }
+});
+
+export const getTavukDunyasi_Sponsorship = (): Sponsorship => ({
+  id: 'tavuk-dunyasi-' + Math.random().toString(36).substr(2, 5),
+  brand: "Tavuk Dünyası",
+  offer: 14000,
+  repImpact: 24,
+  isScam: false,
+  description: { en: "Experience the world of chicken! Promote our unique recipes and flavors.", tr: "Tavuğun dünyasını keşfet! Eşsiz tariflerimizi ve lezzetlerimizi tanıt." }
+});
+
 export const getYouTubePremium_Sponsorship = (): Sponsorship => ({
   id: 'yt-premium-' + Math.random().toString(36).substr(2, 5),
   brand: "YouTube Premium",
@@ -455,11 +583,32 @@ export const getRandomSponsorship = (isScam: boolean): Sponsorship => {
 
 export const RESTAURANTS = [
   {
+    id: 'tavuk-dunyasi',
+    name: "Tavuk Dünyası",
+    logo: 'https://www.forumkayseri.com/media/image/QPX38VOALVQ9QF.png',
+    price: 1550,
+    desc: { en: "The world of chicken! Increases Tavuk Dünyası sponsorship probability.", tr: "Tavuğun dünyası! Tavuk Dünyası sponsorluk ihtimalini arttırır." }
+  },
+  {
+    id: 'taco-bell',
+    name: "Taco Bell",
+    logo: 'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTLeeXNq1Ns1-jUhc9OPSwQB2-WRZW6mN0SMA&s',
+    price: 1100,
+    desc: { en: "Live más! Increases Taco Bell sponsorship probability.", tr: "Live más! Taco Bell sponsorluk ihtimalini arttırır." }
+  },
+  {
+    id: 'nebras',
+    name: "Nebras",
+    logo: 'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQMW39-N0YoeN-OVIUgmNoulOQnfjdlGc0i6A&s',
+    price: 1450,
+    desc: { en: "Authentic Middle Eastern cuisine! Increases Nebras sponsorship probability.", tr: "Otantik Orta Doğu mutfağı! Nebras sponsorluk ihtimalini arttırır." }
+  },
+  {
     id: 'planets-pizza',
     name: "Planets Pizza",
     logo: 'https://images.squarespace-cdn.com/content/67caec292d79965e1f03863b/f8e95834-0f9a-430c-865f-b5c30091ebb2/hd-logo.png?format=1000w&content-type=image%2Fpng',
     price: 1350,
-    desc: { en: "Cosmic pizza experience! Increases Planets Pizza sponsorship probability.", tr: "Kozmik pizza deneyimi! Planets Pizza sponsorluk ihtimalini arttırır." }
+    desc: { en: "Cosmic pizza experience! Increases Planets Pizza sponsorship probability.", tr: "Kozmik pizza deneyimi! Planets Pizza sponsorship probability increases." }
   },
   {
     id: 'little-caesars',

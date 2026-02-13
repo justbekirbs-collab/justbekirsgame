@@ -1,3 +1,4 @@
+
 export type Language = 'en' | 'tr';
 
 export interface GameState {
@@ -13,12 +14,13 @@ export interface GameState {
   language: Language;
   guaranteedSponsor?: boolean; // Legacy flag, now replaced by sponsorLuck logic
   sponsorLuck: number; // 0 to 100
-  activeRestaurant?: 'kfc' | 'popeyes' | 'bk' | 'wendys' | 'hd-iskender' | 'kudo-kudo' | 'dominos' | 'starbucks' | 'subway' | 'doyuyo' | 'mcdonalds' | 'bursa-kebap-evi' | 'planets-pizza' | 'little-caesars' | 'maydonoz-doner' | null;
+  activeRestaurant?: 'kfc' | 'popeyes' | 'bk' | 'wendys' | 'hd-iskender' | 'kudo-kudo' | 'dominos' | 'starbucks' | 'subway' | 'doyuyo' | 'mcdonalds' | 'bursa-kebap-evi' | 'planets-pizza' | 'little-caesars' | 'maydonoz-doner' | 'nebras' | 'taco-bell' | 'tavuk-dunyasi' | null;
   isElonModeUnlocked?: boolean;
   elonPurchases?: Record<string, number>;
   isBillModeUnlocked?: boolean;
   billPurchases?: Record<string, number>;
   isAdminUnlocked?: boolean;
+  isGeminiEnabled?: boolean;
 }
 
 export interface LocalizedString {

@@ -2,72 +2,284 @@
 <html lang="tr">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>DevTube Tycoon</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>JustBekir's Game 43 - Ultimate Edition</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;700&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <style>
         body {
             font-family: 'Inter', sans-serif;
-            background-color: #0f172a;
+            background-color: #020617;
             color: #f8fafc;
             overflow: hidden;
+            touch-action: manipulation;
+            position: relative;
         }
+
+        /* Moving Nebula Background with Layered Depth */
+        .nebula-bg {
+            position: fixed;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: radial-gradient(circle at 30% 30%, rgba(30, 58, 138, 0.3) 0%, transparent 50%),
+                        radial-gradient(circle at 70% 70%, rgba(88, 28, 135, 0.3) 0%, transparent 50%),
+                        radial-gradient(circle at 50% 50%, rgba(15, 23, 42, 1) 0%, transparent 100%);
+            animation: nebulaRotate 120s linear infinite;
+            z-index: -2;
+            pointer-events: none;
+        }
+
+        /* Animated Data Streaks */
+        .data-streaks {
+            position: fixed;
+            inset: 0;
+            z-index: -1;
+            overflow: hidden;
+            pointer-events: none;
+            opacity: 0.15;
+        }
+        .streak {
+            position: absolute;
+            width: 1px;
+            height: 100px;
+            background: linear-gradient(to bottom, transparent, #3b82f6, transparent);
+            animation: streakMove 5s linear infinite;
+        }
+
+        @keyframes streakMove {
+            0% { transform: translateY(-100px); opacity: 0; }
+            50% { opacity: 1; }
+            100% { transform: translateY(100vh); opacity: 0; }
+        }
+
+        /* Scanline Effect */
+        .scanline {
+            width: 100%;
+            height: 100px;
+            z-index: 100;
+            background: linear-gradient(0deg, rgba(0, 0, 0, 0) 0%, rgba(255, 255, 255, 0.05) 50%, rgba(0, 0, 0, 0) 100%);
+            opacity: 0.1;
+            position: absolute;
+            bottom: 100%;
+            animation: scanline 4s linear infinite;
+            pointer-events: none;
+        }
+
+        @keyframes scanline {
+            0% { bottom: 120%; }
+            100% { bottom: -20%; }
+        }
+
+        @keyframes nebulaRotate {
+            from { transform: rotate(0deg) scale(1); }
+            50% { transform: rotate(180deg) scale(1.1); }
+            to { transform: rotate(360deg) scale(1); }
+        }
+
         .code-font {
             font-family: 'Fira Code', monospace;
         }
+
         /* Custom Scrollbar */
         ::-webkit-scrollbar {
-            width: 8px;
+            width: 6px;
         }
         ::-webkit-scrollbar-track {
-            background: #1e293b;
+            background: #0f172a;
         }
         ::-webkit-scrollbar-thumb {
-            background: #475569;
-            border-radius: 4px;
+            background: #334155;
+            border-radius: 10px;
         }
         ::-webkit-scrollbar-thumb:hover {
-            background: #64748b;
+            background: #475569;
         }
 
-        /* Animations */
+        /* Massive Animation Collection */
         @keyframes fadeIn {
-            from { opacity: 0; }
-            to { opacity: 1; }
+            from { opacity: 0; transform: scale(0.95); filter: blur(10px); }
+            to { opacity: 1; transform: scale(1); filter: blur(0); }
         }
         @keyframes slideUp {
-            from { transform: translateY(20px); opacity: 0; }
-            to { transform: translateY(0); opacity: 1; }
+            from { transform: translateY(60px); opacity: 0; filter: blur(20px); }
+            to { transform: translateY(0); opacity: 1; filter: blur(0); }
         }
         @keyframes slideDown {
-            from { transform: translateY(-20px); opacity: 0; }
+            from { transform: translateY(-40px); opacity: 0; }
             to { transform: translateY(0); opacity: 1; }
         }
         @keyframes popIn {
-            0% { transform: scale(0.9); opacity: 0; }
-            70% { transform: scale(1.05); opacity: 1; }
+            0% { transform: scale(0.4); opacity: 0; }
+            70% { transform: scale(1.1); }
             100% { transform: scale(1); opacity: 1; }
         }
-        @keyframes slideInRight {
-            from { transform: translateX(100%); opacity: 0; }
-            to { transform: translateX(0); opacity: 1; }
+        @keyframes float {
+            0% { transform: translateY(0px) rotate(0deg); }
+            33% { transform: translateY(-15px) rotate(3deg); }
+            66% { transform: translateY(-7px) rotate(-3deg); }
+            100% { transform: translateY(0px) rotate(0deg); }
+        }
+        @keyframes floatUpFade {
+            0% { transform: translateY(0) scale(1); opacity: 1; filter: drop-shadow(0 0 15px currentColor); }
+            100% { transform: translateY(-150px) scale(2); opacity: 0; filter: drop-shadow(0 0 30px currentColor); }
+        }
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            10%, 30%, 50%, 70%, 90% { transform: translateX(-5px); }
+            20%, 40%, 60%, 80% { transform: translateX(5px); }
+        }
+        @keyframes shimmer {
+            0% { background-position: -200% 0; }
+            100% { background-position: 200% 0; }
+        }
+        @keyframes liquidBorder {
+            0% { border-color: #3b82f6; box-shadow: 0 0 5px #3b82f6; }
+            33% { border-color: #8b5cf6; box-shadow: 0 0 15px #8b5cf6; }
+            66% { border-color: #ec4899; box-shadow: 0 0 10px #ec4899; }
+            100% { border-color: #3b82f6; box-shadow: 0 0 5px #3b82f6; }
+        }
+        @keyframes glitch {
+            0% { transform: translate(0); clip-path: inset(0 0 0 0); }
+            10% { transform: translate(-3px, 3px); clip-path: inset(20% 0 10% 0); }
+            20% { transform: translate(3px, -3px); clip-path: inset(10% 0 40% 0); }
+            30% { transform: translate(-3px, 2px); clip-path: inset(0 30% 0 20%); }
+            100% { transform: translate(0); clip-path: inset(0 0 0 0); }
+        }
+        @keyframes cyberPulse {
+            0% { box-shadow: 0 0 0 0 rgba(59, 130, 246, 0.6); }
+            70% { box-shadow: 0 0 30px 10px rgba(59, 130, 246, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(59, 130, 246, 0); }
+        }
+        @keyframes waveRotation {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
         }
 
-        .animate-fade-in { animation: fadeIn 0.4s ease-out forwards; }
-        .animate-slide-up { animation: slideUp 0.5s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
-        .animate-slide-down { animation: slideDown 0.4s ease-out forwards; }
-        .animate-pop-in { animation: popIn 0.4s cubic-bezier(0.34, 1.56, 0.64, 1) forwards; }
-        .animate-slide-in { animation: slideInRight 0.3s ease-out forwards; }
-
-        .hover-lift { transition: transform 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
-        .hover-lift:hover { transform: translateY(-4px); }
-        .active-shrink:active { transform: scale(0.96); }
-
-        /* Transition for tab switching */
-        .tab-content {
-            transition: opacity 0.2s ease-in-out;
+        /* New Animations */
+        @keyframes typing {
+            from { width: 0 }
+            to { width: 100% }
         }
+        @keyframes blink-caret {
+            from, to { border-color: transparent }
+            50% { border-color: #3b82f6 }
+        }
+        @keyframes glowPulse {
+            0% { filter: drop-shadow(0 0 2px #3b82f6); }
+            50% { filter: drop-shadow(0 0 15px #60a5fa); }
+            100% { filter: drop-shadow(0 0 2px #3b82f6); }
+        }
+        @keyframes breath {
+            0% { transform: scale(1); opacity: 0.9; }
+            50% { transform: scale(1.02); opacity: 1; }
+            100% { transform: scale(1); opacity: 0.9; }
+        }
+        @keyframes reveal-diagonal {
+            0% { clip-path: polygon(0 0, 0 0, 0 100%, 0% 100%); }
+            100% { clip-path: polygon(0 0, 100% 0, 100% 100%, 0 100%); }
+        }
+
+        .animate-fade-in { animation: fadeIn 0.8s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
+        .animate-slide-up { animation: slideUp 1s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
+        .animate-slide-down { animation: slideDown 0.7s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
+        .animate-pop-in { animation: popIn 0.8s cubic-bezier(0.34, 1.56, 0.64, 1) forwards; }
+        .animate-float { animation: float 6s ease-in-out infinite; }
+        .animate-float-up-fade { animation: floatUpFade 1.5s cubic-bezier(0.1, 0.9, 0.2, 1) forwards; }
+        .animate-shake { animation: shake 0.5s cubic-bezier(.36,.07,.19,.97) both; }
+        .animate-glitch { animation: glitch 0.4s infinite; }
+        .animate-cyber-pulse { animation: cyberPulse 2s infinite; }
+        .animate-glow-pulse { animation: glowPulse 3s infinite; }
+        .animate-breath { animation: breath 4s ease-in-out infinite; }
+        .animate-reveal { animation: reveal-diagonal 1.2s cubic-bezier(0.77, 0, 0.175, 1) forwards; }
+        
+        .hover-3d { 
+            transition: all 0.6s cubic-bezier(0.23, 1, 0.32, 1);
+            transform-style: preserve-3d;
+        }
+        .hover-3d:hover { 
+            transform: translateY(-15px) rotateX(10deg) rotateY(5deg) scale(1.05); 
+            box-shadow: 0 40px 80px -20px rgba(0, 0, 0, 0.8);
+            filter: brightness(1.2);
+        }
+        
+        .active-crunch:active { transform: scale(0.85) rotateZ(-2deg); transition: transform 0.1s; }
+
+        .shimmer {
+            background: linear-gradient(90deg, rgba(255,255,255,0) 0%, rgba(255,255,255,0.15) 50%, rgba(255,255,255,0) 100%);
+            background-size: 200% 100%;
+            animation: shimmer 4s infinite linear;
+        }
+
+        .liquid-border {
+            border: 2px solid transparent;
+            animation: liquidBorder 6s infinite alternate ease-in-out;
+        }
+
+        .glass {
+            background: rgba(15, 23, 42, 0.75);
+            backdrop-filter: blur(24px);
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            box-shadow: 0 12px 48px rgba(0, 0, 0, 0.4);
+        }
+
+        /* Complex Grid Overlay */
+        .grid-overlay {
+            position: fixed;
+            inset: 0;
+            background-image: 
+                linear-gradient(rgba(59, 130, 246, 0.05) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(59, 130, 246, 0.05) 1px, transparent 1px);
+            background-size: 50px 50px;
+            pointer-events: none;
+            z-index: -1;
+            perspective: 1000px;
+            transform: rotateX(45deg) scale(2);
+            transform-origin: center top;
+            opacity: 0.3;
+        }
+
+        /* Button Slide Background */
+        .btn-gliss {
+            position: relative;
+            z-index: 1;
+            overflow: hidden;
+        }
+        .btn-gliss::before {
+            content: '';
+            position: absolute;
+            top: 0; left: -100%;
+            width: 100%; height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
+            transition: left 0.6s cubic-bezier(0.19, 1, 0.22, 1);
+            z-index: -1;
+        }
+        .btn-gliss:hover::before {
+            left: 100%;
+        }
+
+        /* Data Stream Background for Gemini */
+        .gemini-stream {
+            position: absolute;
+            inset: 0;
+            overflow: hidden;
+            pointer-events: none;
+        }
+        .gemini-stream div {
+            position: absolute;
+            color: #4f46e5;
+            font-family: monospace;
+            font-size: 10px;
+            white-space: nowrap;
+            opacity: 0.1;
+            animation: streamDown 20s linear infinite;
+        }
+        @keyframes streamDown {
+            from { transform: translateY(-100%); }
+            to { transform: translateY(100vh); }
+        }
+
     </style>
 <script type="importmap">
 {
@@ -75,12 +287,34 @@
     "react/": "https://esm.sh/react@^19.2.4/",
     "react": "https://esm.sh/react@^19.2.4",
     "react-dom/": "https://esm.sh/react-dom@^19.2.4/",
-    "@google/genai": "https://esm.sh/@google/genai@^1.41.0"
+    "@google/genai": "https://esm.sh/@google/genai@^1.41.0",
+    "vite": "https://esm.sh/vite@^7.3.1",
+    "@vitejs/plugin-react": "https://esm.sh/@vitejs/plugin-react@^5.1.4"
   }
 }
 </script>
 </head>
 <body>
+    <div class="nebula-bg"></div>
+    <div class="grid-overlay"></div>
+    <div class="data-streaks" id="streaks-container"></div>
+    <div class="scanline"></div>
     <div id="root"></div>
+
+    <script>
+        // Generate random streaks
+        const container = document.getElementById('streaks-container');
+        for (let i = 0; i < 40; i++) {
+            const streak = document.createElement('div');
+            streak.className = 'streak';
+            streak.style.left = Math.random() * 100 + 'vw';
+            streak.style.animationDelay = Math.random() * 5 + 's';
+            streak.style.animationDuration = (2 + Math.random() * 5) + 's';
+            streak.style.opacity = Math.random() * 0.5;
+            container.appendChild(streak);
+        }
+    </script>
+
+    <script type="module" src="./index.tsx"></script>
 </body>
 </html>
