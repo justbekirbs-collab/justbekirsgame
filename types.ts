@@ -21,6 +21,9 @@ export interface GameState {
   billPurchases?: Record<string, number>;
   isAdminUnlocked?: boolean;
   isGeminiEnabled?: boolean;
+  isKfcGameUnlocked?: boolean;
+  kfcMenu?: string[];
+  kfcSatisfaction?: number;
 }
 
 export interface LocalizedString {

@@ -25,11 +25,8 @@ const AnimatedNumber: React.FC<{ value: number; suffix?: string; colorClass?: st
       const animate = (currentTime: number) => {
         const elapsed = currentTime - startTime;
         const progress = Math.min(elapsed / duration, 1);
-        
-        // Easing function for smoother numeric roll
         const ease = 1 - Math.pow(1 - progress, 5);
         const currentVal = Math.floor(startValue + (endValue - startValue) * ease);
-        
         setDisplayValue(currentVal);
 
         if (progress < 1) {
@@ -46,9 +43,9 @@ const AnimatedNumber: React.FC<{ value: number; suffix?: string; colorClass?: st
 
   return (
     <span className={`tabular-nums transition-all duration-300 inline-block 
-      ${flash === 'positive' ? 'scale-125 text-white brightness-150' : ''}
-      ${flash === 'negative' ? 'scale-90 text-red-500 brightness-150' : ''}
-      ${!flash ? 'scale-100 ' + colorClass : ''}
+      ${flash === 'positive' ? 'scale-125 brightness-150' : ''}
+      ${flash === 'negative' ? 'scale-90 brightness-150' : ''}
+      ${!flash ? 'scale-100 ' + (colorClass || 'rgb-text') : ''}
     `}>
       {displayValue.toLocaleString()}{suffix}
     </span>
@@ -61,28 +58,30 @@ const StatsBar: React.FC<StatsBarProps> = ({ state }) => {
     <div className="flex flex-wrap items-center justify-between gap-4 p-5 glass border-b border-slate-800 shrink-0 shadow-2xl relative z-50 animate-slide-down">
       <div className="flex items-center gap-4 sm:gap-10">
         <div className="flex flex-col group">
-          <span className="text-[8px] text-slate-500 uppercase font-black tracking-widest mb-0.5 group-hover:text-emerald-400 transition-colors">{t.money}</span>
-          <span className="text-lg font-black text-emerald-400 drop-shadow-[0_0_8px_rgba(52,211,153,0.3)]">
-            <AnimatedNumber value={state.money} suffix=" ₺" colorClass="text-emerald-400" />
+          <span className="text-[8px] uppercase font-black tracking-widest mb-0.5 transition-colors opacity-70">{t.money}</span>
+          <span className="text-lg font-black drop-shadow-[0_0_8px_rgba(52,211,153,0.3)]">
+            <AnimatedNumber value={state.money} suffix=" ₺" />
           </span>
         </div>
         <div className="flex flex-col border-l border-slate-800 pl-4 sm:pl-10 group">
-          <span className="text-[8px] text-slate-500 uppercase font-black tracking-widest mb-0.5 group-hover:text-blue-400 transition-colors">{t.reputation}</span>
-          <span className="text-lg font-black text-blue-400 drop-shadow-[0_0_8px_rgba(96,165,250,0.3)]">
-            <AnimatedNumber value={state.reputation} colorClass="text-blue-400" />
+          <span className="text-[8px] uppercase font-black tracking-widest mb-0.5 transition-colors opacity-70">{t.reputation}</span>
+          <span className="text-lg font-black drop-shadow-[0_0_8px_rgba(96,165,250,0.3)]">
+            <AnimatedNumber value={state.reputation} />
           </span>
         </div>
         <div className="flex flex-col border-l border-slate-800 pl-4 sm:pl-10 group">
-          <span className="text-[8px] text-slate-500 uppercase font-black tracking-widest mb-0.5 group-hover:text-purple-400 transition-colors">{t.subscribers}</span>
-          <span className="text-lg font-black text-purple-400 drop-shadow-[0_0_8px_rgba(192,132,252,0.3)]">
-            <AnimatedNumber value={state.subscribers} colorClass="text-purple-400" />
+          <span className="text-[8px] uppercase font-black tracking-widest mb-0.5 transition-colors opacity-70">{t.subscribers}</span>
+          <span className="text-lg font-black drop-shadow-[0_0_8px_rgba(192,132,252,0.3)]">
+            <AnimatedNumber value={state.subscribers} />
           </span>
         </div>
       </div>
       <div className="flex items-center gap-6 ml-auto">
         <div className="flex flex-col items-end group">
-          <span className="text-[8px] text-slate-500 uppercase font-black tracking-widest mb-0.5 group-hover:text-slate-200 transition-colors">{t.day}</span>
-          <span className="text-xs font-black text-slate-200 uppercase tracking-tighter tabular-nums bg-slate-800/50 px-3 py-1 rounded-lg border border-slate-700 group-hover:scale-110 transition-transform shadow-[0_0_15px_rgba(255,255,255,0.1)]">DAY {state.day}</span>
+          <span className="text-[8px] uppercase font-black tracking-widest mb-0.5 transition-colors opacity-70">{t.day}</span>
+          <div className="px-4 py-1.5 rounded-lg rgb-border-anim group-hover:scale-110 transition-transform shadow-[0_0_20px_rgba(255,255,255,0.1)] flex items-center justify-center">
+             <span className="text-xs font-black uppercase tracking-tighter tabular-nums rgb-text">DAY {state.day}</span>
+          </div>
         </div>
       </div>
     </div>
