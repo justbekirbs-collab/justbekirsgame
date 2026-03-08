@@ -74,9 +74,46 @@ const App: React.FC = () => {
   const [state, setState] = useState<GameState>(INITIAL_STATE);
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [activeSponsor, setActiveSponsor] = useState<Sponsorship | null>(null);
-  const [currentTab, setCurrentTab] = useState<'main' | 'elon' | 'bill' | 'shop' | 'inventory' | 'restaurant' | 'settings' | 'admin' | 'kfc'>('main');
+  const [currentTab, setCurrentTab] = useState<'main' | 'elon' | 'bill' | 'shop' | 'inventory' | 'restaurant' | 'settings' | 'admin' | 'kfc'>(() => {
+    if (typeof window !== 'undefined') {
+      const hash = window.location.hash.replace('#', '');
+      if (['main', 'elon', 'bill', 'shop', 'inventory', 'restaurant', 'settings', 'admin', 'kfc'].includes(hash)) {
+        return hash as any;
+      }
+    }
+    return 'main';
+  });
   const [promoCode, setPromoCode] = useState('');
   const [floatingRewards, setFloatingRewards] = useState<FloatingReward[]>([]);
+
+  useEffect(() => {
+    const handleHashChange = () => {
+      const hash = window.location.hash.replace('#', '');
+      if (['main', 'elon', 'bill', 'shop', 'inventory', 'restaurant', 'settings', 'admin', 'kfc'].includes(hash)) {
+        setCurrentTab(hash as any);
+      } else if (!hash) {
+        setCurrentTab('main');
+      }
+    };
+    window.addEventListener('hashchange', handleHashChange);
+    return () => window.removeEventListener('hashchange', handleHashChange);
+  }, []);
+
+  useEffect(() => {
+    if (window.location.hash.replace('#', '') !== currentTab) {
+      window.location.hash = currentTab;
+    }
+  }, [currentTab]);
+
+  useEffect(() => {
+    Object.defineProperty(window, 'YetAnotherGoodGame', {
+      get: function() {
+        window.location.href = 'https://as.justbekir.workers.dev/home';
+        return 'Redirecting...';
+      },
+      configurable: true
+    });
+  }, []);
 
   // Admin Inputs
   const [adminMoney, setAdminMoney] = useState<string>('');
