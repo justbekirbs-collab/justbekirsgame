@@ -77,7 +77,8 @@ const App: React.FC = () => {
   const [currentTab, setCurrentTab] = useState<'main' | 'elon' | 'bill' | 'shop' | 'inventory' | 'restaurant' | 'settings' | 'admin' | 'kfc'>(() => {
     if (typeof window !== 'undefined') {
       const path = window.location.pathname.replace('/', '');
-      if (['main', 'elon', 'bill', 'shop', 'inventory', 'restaurant', 'settings', 'admin', 'kfc'].includes(path)) {
+      if (path === 'home') return 'main';
+      if (['elon', 'bill', 'shop', 'inventory', 'restaurant', 'settings', 'admin', 'kfc'].includes(path)) {
         return path as any;
       }
     }
@@ -89,10 +90,10 @@ const App: React.FC = () => {
   useEffect(() => {
     const handlePopState = () => {
       const path = window.location.pathname.replace('/', '');
-      if (['main', 'elon', 'bill', 'shop', 'inventory', 'restaurant', 'settings', 'admin', 'kfc'].includes(path)) {
-        setCurrentTab(path as any);
-      } else if (!path) {
+      if (path === 'home' || !path) {
         setCurrentTab('main');
+      } else if (['elon', 'bill', 'shop', 'inventory', 'restaurant', 'settings', 'admin', 'kfc'].includes(path)) {
+        setCurrentTab(path as any);
       }
     };
     window.addEventListener('popstate', handlePopState);
@@ -101,8 +102,9 @@ const App: React.FC = () => {
 
   useEffect(() => {
     const path = window.location.pathname.replace('/', '');
-    if (path !== currentTab) {
-      window.history.pushState(null, '', `/${currentTab === 'main' ? '' : currentTab}`);
+    const targetPath = currentTab === 'main' ? 'home' : currentTab;
+    if (path !== targetPath) {
+      window.history.pushState(null, '', `/${targetPath}`);
     }
   }, [currentTab]);
 
@@ -110,6 +112,13 @@ const App: React.FC = () => {
     Object.defineProperty(window, 'YetAnotherGoodGame', {
       get: function() {
         window.location.href = 'https://as.justbekir.workers.dev/home';
+        return 'Redirecting...';
+      },
+      configurable: true
+    });
+    Object.defineProperty(window, 'rentagf', {
+      get: function() {
+        window.location.href = 'https://static0.cbrimages.com/wordpress/wp-content/uploads/2023/06/rent-a-girlfriend-season-3-visual.jpg?w=1200&h=675&fit=crop';
         return 'Redirecting...';
       },
       configurable: true
