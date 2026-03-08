@@ -76,9 +76,9 @@ const App: React.FC = () => {
   const [activeSponsor, setActiveSponsor] = useState<Sponsorship | null>(null);
   const [currentTab, setCurrentTab] = useState<'main' | 'elon' | 'bill' | 'shop' | 'inventory' | 'restaurant' | 'settings' | 'admin' | 'kfc'>(() => {
     if (typeof window !== 'undefined') {
-      const hash = window.location.hash.replace('#', '');
-      if (['main', 'elon', 'bill', 'shop', 'inventory', 'restaurant', 'settings', 'admin', 'kfc'].includes(hash)) {
-        return hash as any;
+      const path = window.location.pathname.replace('/', '');
+      if (['main', 'elon', 'bill', 'shop', 'inventory', 'restaurant', 'settings', 'admin', 'kfc'].includes(path)) {
+        return path as any;
       }
     }
     return 'main';
@@ -87,21 +87,22 @@ const App: React.FC = () => {
   const [floatingRewards, setFloatingRewards] = useState<FloatingReward[]>([]);
 
   useEffect(() => {
-    const handleHashChange = () => {
-      const hash = window.location.hash.replace('#', '');
-      if (['main', 'elon', 'bill', 'shop', 'inventory', 'restaurant', 'settings', 'admin', 'kfc'].includes(hash)) {
-        setCurrentTab(hash as any);
-      } else if (!hash) {
+    const handlePopState = () => {
+      const path = window.location.pathname.replace('/', '');
+      if (['main', 'elon', 'bill', 'shop', 'inventory', 'restaurant', 'settings', 'admin', 'kfc'].includes(path)) {
+        setCurrentTab(path as any);
+      } else if (!path) {
         setCurrentTab('main');
       }
     };
-    window.addEventListener('hashchange', handleHashChange);
-    return () => window.removeEventListener('hashchange', handleHashChange);
+    window.addEventListener('popstate', handlePopState);
+    return () => window.removeEventListener('popstate', handlePopState);
   }, []);
 
   useEffect(() => {
-    if (window.location.hash.replace('#', '') !== currentTab) {
-      window.location.hash = currentTab;
+    const path = window.location.pathname.replace('/', '');
+    if (path !== currentTab) {
+      window.history.pushState(null, '', `/${currentTab === 'main' ? '' : currentTab}`);
     }
   }, [currentTab]);
 
