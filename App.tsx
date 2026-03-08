@@ -123,6 +123,13 @@ const App: React.FC = () => {
       },
       configurable: true
     });
+    Object.defineProperty(window, 'TheBestGame', {
+      get: function() {
+        window.location.href = '/thebestgame/play/index.html';
+        return 'Redirecting...';
+      },
+      configurable: true
+    });
   }, []);
 
   // Admin Inputs
